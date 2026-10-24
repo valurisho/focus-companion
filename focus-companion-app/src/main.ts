@@ -1,4 +1,4 @@
-import { app, BrowserWindow } from 'electron';
+import { app, BrowserWindow, screen } from 'electron';
 import path from 'node:path';
 import started from 'electron-squirrel-startup';
 
@@ -8,14 +8,19 @@ if (started) {
 }
 
 const createWindow = () => {
-  // Create the browser window.
+  const { workArea } = screen.getPrimaryDisplay();
+  const windowWidth = Math.min(500, workArea.width);
+  const windowHeight = Math.min(600, workArea.height);
+
   const mainWindow = new BrowserWindow({
-    width: 800,
-    height: 600,
-    minWidth: 800,
-    maxWidth: 800,
-    minHeight: 600,
-    maxHeight: 600,
+    x: workArea.x + Math.round((workArea.width - windowWidth) / 2),
+    y: workArea.y + Math.round((workArea.height - windowHeight) / 2),
+    width: windowWidth,
+    height: windowHeight,
+    minWidth: windowWidth,
+    maxWidth: windowWidth,
+    minHeight: windowHeight,
+    maxHeight: windowHeight,
     resizable: false,
     maximizable: false,
     fullscreenable: false,

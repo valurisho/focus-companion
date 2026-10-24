@@ -1,11 +1,231 @@
+import { useEffect, useState } from 'react'
 import { createRoot } from 'react-dom/client'
 import './index.css'
 
+type ModalName = 'duration' | 'settings' | 'closet' | null
+
+const sessionOptions = [15, 20, 25, 30, 45, 60]
+
+function formatTime(seconds: number) {
+  const minutes = Math.floor(seconds / 60)
+  const remainder = seconds % 60
+  return `${String(minutes).padStart(2, '0')}:${String(remainder).padStart(2, '0')}`
+}
+
+function BuddyScene() {
+  return (
+    <svg
+      className="buddy-scene"
+      viewBox="0 0 640 300"
+      role="img"
+      aria-labelledby="buddy-scene-title"
+      preserveAspectRatio="xMidYMid meet"
+    >
+      <title id="buddy-scene-title">Your study buddy relaxing on a sofa</title>
+      <rect x="1" y="1" width="638" height="298" rx="24" className="scene-background" />
+      <g className="scene-window">
+        <rect x="42" y="34" width="112" height="94" rx="4" />
+        <path d="M98 35v92M43 81h110" />
+      </g>
+      <g className="scene-lamp">
+        <path d="M548 76h48l14 47h-76zM572 123v126" />
+        <path d="M552 250h40" />
+      </g>
+      <ellipse className="scene-shadow" cx="320" cy="270" rx="190" ry="17" />
+      <path className="scene-floor" d="M4 244h632" />
+      <g className="scene-sofa">
+        <path d="M184 190v-45a21 21 0 0 1 21-21h230a21 21 0 0 1 21 21v45" />
+        <path d="M196 171h248v54H196z" />
+        <rect x="158" y="153" width="43" height="87" rx="17" />
+        <rect x="439" y="153" width="43" height="87" rx="17" />
+        <path d="M183 240v9m251-9v9" />
+      </g>
+      <g className="scene-buddy">
+        <path d="M263 171c3-56 22-83 57-83s54 27 57 83z" />
+        <ellipse cx="300" cy="139" rx="5.5" ry="6.5" />
+        <ellipse cx="340" cy="139" rx="5.5" ry="6.5" />
+        <path d="M309 155q11 11 22 0" />
+      </g>
+    </svg>
+  )
+}
+
 function App() {
-  return <main className="min-h-screen bg-stone-50 p-8 text-stone-900">
-    <h1 className="text-3xl font-semibold">Focus Companion</h1>
-    <p className="mt-2 text-stone-600">Your study space is ready.</p>
-  </main>
+  const [sessionMinutes, setSessionMinutes] = useState(20)
+  const [secondsLeft, setSecondsLeft] = useState(20 * 60)
+  const [endsAt, setEndsAt] = useState<number | null>(null)
+  const [isComplete, setIsComplete] = useState(false)
+  const [modal, setModal] = useState<ModalName>(null)
+
+  useEffect(() => {
+    if (endsAt === null) return
+
+    const updateTimer = () => {
+      const remaining = Math.max(0, Math.ceil((endsAt - Date.now()) / 1000))
+      setSecondsLeft(remaining)
+
+      if (remaining === 0) {
+        setEndsAt(null)
+        setIsComplete(true)
+      }
+    }
+
+    updateTimer()
+    const intervalId = window.setInterval(updateTimer, 250)
+    return () => window.clearInterval(intervalId)
+  }, [endsAt])
+
+  const isRunning = endsAt !== null
+  const isPaused = !isRunning && secondsLeft < sessionMinutes * 60 && !isComplete
+  const status = isComplete
+    ? 'SESSION COMPLETE'
+    : isRunning
+      ? 'FOCUS IN PROGRESS'
+      : isPaused
+        ? 'PAUSED — TAKE YOUR TIME'
+        : 'READY TO FOCUS'
+
+  const startOrResume = () => {
+    setIsComplete(false)
+    setEndsAt(Date.now() + secondsLeft * 1000)
+  }
+
+  const pause = () => {
+    if (endsAt === null) return
+    setSecondsLeft(Math.max(0, Math.ceil((endsAt - Date.now()) / 1000)))
+    setEndsAt(null)
+  }
+
+  const chooseDuration = (minutes: number) => {
+    setSessionMinutes(minutes)
+    setSecondsLeft(minutes * 60)
+    setEndsAt(null)
+    setIsComplete(false)
+    setModal(null)
+  }
+
+  const primaryAction = () => {
+    if (isRunning) {
+      pause()
+    } else if (isComplete) {
+      setSecondsLeft(sessionMinutes * 60)
+      setIsComplete(false)
+      setEndsAt(Date.now() + sessionMinutes * 60 * 1000)
+    } else {
+      startOrResume()
+    }
+  }
+
+  return (
+    <main className="app-shell">
+      <section className="study-window" aria-label="Focus Companion study screen">
+        <header className="top-bar">
+          <div className="brand-lockup">
+            <span className="brand-mark" aria-hidden="true">✦</span>
+            <div>
+              <p className="eyebrow">YOUR STUDY SPACE</p>
+              <h1>Study Buddy</h1>
+            </div>
+          </div>
+          <span className="buddy-status"><span /> Buddy is here</span>
+        </header>
+
+        <section className="focus-content" aria-label="Focus timer and companion">
+          <div className={`session-status ${isComplete ? 'complete' : ''}`}>
+            <span className="status-dot" />
+            {status}
+          </div>
+
+          <div className="timer" role="timer" aria-label={`${formatTime(secondsLeft)} remaining`}>
+            {formatTime(secondsLeft)}
+          </div>
+          <p className="session-detail">
+            {sessionMinutes}-min session
+            <span aria-hidden="true"> · </span>
+            <button className="text-button" onClick={() => !isRunning && setModal('duration')} disabled={isRunning}>
+              Change
+            </button>
+          </p>
+
+          <div className="scene-frame">
+            <BuddyScene />
+          </div>
+
+          <div className="buddy-caption">
+            <h2>Buddy</h2>
+            <p>{isComplete ? 'Lovely work — your buddy is proud of you!' : 'No accessories yet — finish a session to earn one'}</p>
+          </div>
+
+          <div className="primary-actions">
+            <button className="start-button" onClick={primaryAction}>
+              {isRunning ? 'Pause' : isPaused ? 'Resume' : isComplete ? 'Start another session' : 'Start'}
+            </button>
+            {(isRunning || isPaused) && (
+              <button className="reset-button" onClick={() => chooseDuration(sessionMinutes)}>
+                End session
+              </button>
+            )}
+          </div>
+        </section>
+
+        <footer className="bottom-bar">
+          <div className="max-focus" aria-label="Max Focus is coming soon">
+            <button className="switch" type="button" disabled aria-label="Max Focus off, coming soon">
+              <span />
+            </button>
+            <span className="max-focus-label">Max Focus</span>
+            <span className="coming-soon">Coming soon</span>
+          </div>
+          <div className="footer-actions">
+            <button className="secondary-button" onClick={() => setModal('settings')}>Settings</button>
+            <button className="secondary-button" onClick={() => setModal('closet')}>Closet</button>
+          </div>
+        </footer>
+      </section>
+
+      {modal && (
+        <div className="modal-backdrop" onMouseDown={(event) => event.target === event.currentTarget && setModal(null)}>
+          <section className="modal-card" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+            <button className="modal-close" aria-label="Close dialog" onClick={() => setModal(null)}>×</button>
+            {modal === 'duration' && (
+              <>
+                <p className="eyebrow">MAKE IT YOURS</p>
+                <h2 id="modal-title">Choose a focus session</h2>
+                <p className="modal-description">Pick a length that feels manageable. You can change it again before you start.</p>
+                <div className="duration-options">
+                  {sessionOptions.map((minutes) => (
+                    <button
+                      className={`duration-option ${minutes === sessionMinutes ? 'selected' : ''}`}
+                      key={minutes}
+                      onClick={() => chooseDuration(minutes)}
+                    >
+                      <strong>{minutes}</strong><span>min</span>
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
+            {modal === 'settings' && (
+              <>
+                <p className="eyebrow">YOUR PREFERENCES</p>
+                <h2 id="modal-title">Settings</h2>
+                <p className="modal-description">Your focus session is set to {sessionMinutes} minutes. Use “Change” on the timer to choose another duration.</p>
+                <div className="settings-note"><span>✦</span><p>More ways to personalize your study space are on the way.</p></div>
+              </>
+            )}
+            {modal === 'closet' && (
+              <>
+                <p className="eyebrow">BUDDY’S CLOSET</p>
+                <h2 id="modal-title">A little something to earn</h2>
+                <p className="modal-description">Your closet is empty for now. Complete a focus session to earn your first accessory for Buddy.</p>
+                <div className="closet-preview" aria-hidden="true"><span>✦</span><span>♡</span><span>✿</span></div>
+              </>
+            )}
+          </section>
+        </div>
+      )}
+    </main>
+  )
 }
 
 const container = document.getElementById('root')

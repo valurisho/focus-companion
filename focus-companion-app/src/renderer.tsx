@@ -92,6 +92,55 @@ function formatTime(seconds: number) {
   return `${String(minutes).padStart(2, '0')}:${String(remainder).padStart(2, '0')}`
 }
 
+function useTimerSnapshot() {
+  const [snapshot, setSnapshot] = useState<TimerSnapshot>({
+    status: 'ready',
+    durationMinutes: 20,
+    remainingSeconds: 20 * 60,
+  })
+
+  useEffect(() => {
+    let active = true
+    const unsubscribe = window.focusCompanion.onTimerUpdate((nextSnapshot) => {
+      if (active) setSnapshot(nextSnapshot)
+    })
+
+    window.focusCompanion.getTimerState().then((nextSnapshot) => {
+      if (active) setSnapshot(nextSnapshot)
+    })
+
+    return () => {
+      active = false
+      unsubscribe()
+    }
+  }, [])
+
+  return snapshot
+}
+
+function TimerPopup() {
+  const timer = useTimerSnapshot()
+  const statusLabel = timer.status === 'running'
+    ? 'FOCUSING'
+    : timer.status === 'paused'
+      ? 'PAUSED'
+      : timer.status === 'complete'
+        ? 'SESSION COMPLETE'
+        : 'FOCUS TIMER'
+
+  return (
+    <main className="timer-popup-screen" aria-label="Focus Companion timer">
+      <span className={`timer-popup-status ${timer.status}`}>
+        <span className="status-dot" />
+        {statusLabel}
+      </span>
+      <div className="timer-popup-time" role="timer" aria-label={`${formatTime(timer.remainingSeconds)} remaining`}>
+        {formatTime(timer.remainingSeconds)}
+      </div>
+    </main>
+  )
+}
+
 function BuddyScene() {
   return (
     <svg
@@ -131,33 +180,14 @@ function BuddyScene() {
 }
 
 function App() {
-  const [sessionMinutes, setSessionMinutes] = useState(20)
-  const [secondsLeft, setSecondsLeft] = useState(20 * 60)
-  const [endsAt, setEndsAt] = useState<number | null>(null)
-  const [isComplete, setIsComplete] = useState(false)
+  const timer = useTimerSnapshot()
+  const sessionMinutes = timer.durationMinutes
+  const secondsLeft = timer.remainingSeconds
+  const isRunning = timer.status === 'running'
+  const isComplete = timer.status === 'complete'
+  const isPaused = timer.status === 'paused'
   const [modal, setModal] = useState<ModalName>(null)
   const [draftDuration, setDraftDuration] = useState({ hours: 0, minutes: 20 })
-
-  useEffect(() => {
-    if (endsAt === null) return
-
-    const updateTimer = () => {
-      const remaining = Math.max(0, Math.ceil((endsAt - Date.now()) / 1000))
-      setSecondsLeft(remaining)
-
-      if (remaining === 0) {
-        setEndsAt(null)
-        setIsComplete(true)
-      }
-    }
-
-    updateTimer()
-    const intervalId = window.setInterval(updateTimer, 250)
-    return () => window.clearInterval(intervalId)
-  }, [endsAt])
-
-  const isRunning = endsAt !== null
-  const isPaused = !isRunning && secondsLeft < sessionMinutes * 60 && !isComplete
   const status = isComplete
     ? 'SESSION COMPLETE'
     : isRunning
@@ -167,21 +197,15 @@ function App() {
         : 'READY TO FOCUS'
 
   const startOrResume = () => {
-    setIsComplete(false)
-    setEndsAt(Date.now() + secondsLeft * 1000)
+    void window.focusCompanion.startTimer()
   }
 
   const pause = () => {
-    if (endsAt === null) return
-    setSecondsLeft(Math.max(0, Math.ceil((endsAt - Date.now()) / 1000)))
-    setEndsAt(null)
+    void window.focusCompanion.pauseTimer()
   }
 
   const chooseDuration = (minutes: number) => {
-    setSessionMinutes(minutes)
-    setSecondsLeft(minutes * 60)
-    setEndsAt(null)
-    setIsComplete(false)
+    void window.focusCompanion.setTimerDuration(minutes)
     setModal(null)
   }
 
@@ -203,9 +227,7 @@ function App() {
     if (isRunning) {
       pause()
     } else if (isComplete) {
-      setSecondsLeft(sessionMinutes * 60)
-      setIsComplete(false)
-      setEndsAt(Date.now() + sessionMinutes * 60 * 1000)
+      startOrResume()
     } else {
       startOrResume()
     }
@@ -256,7 +278,7 @@ function App() {
               {isRunning ? 'Pause' : isPaused ? 'Resume' : isComplete ? 'Start another session' : 'Start'}
             </button>
             {(isRunning || isPaused) && (
-              <button className="reset-button" onClick={() => chooseDuration(sessionMinutes)}>
+              <button className="reset-button" onClick={() => window.focusCompanion.resetTimer()}>
                 End session
               </button>
             )}
@@ -350,4 +372,5 @@ if (!container) {
   throw new Error('Root element was not found')
 }
 
-createRoot(container).render(<App />)
+const isTimerPopup = new URLSearchParams(window.location.search).get('view') === 'timer'
+createRoot(container).render(isTimerPopup ? <TimerPopup /> : <App />)

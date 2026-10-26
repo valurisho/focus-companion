@@ -404,10 +404,10 @@ button:focus-visible {
 
 .modal-card {
   position: relative;
-  width: min(100%, 430px);
+  width: min(100%, 520px);
   padding: 30px;
-  border: 1px solid #eeece5;
-  border-radius: 23px;
+  border: 2px solid #343734;
+  border-radius: 18px;
   background: var(--paper);
   box-shadow: 0 20px 70px rgb(27 31 26 / 20%);
 }
@@ -428,7 +428,8 @@ button:focus-visible {
 
 .modal-card h2 {
   margin: 5px 0 0;
-  font-size: 25px;
+  font-size: 27px;
+  font-weight: 800;
   letter-spacing: -.04em;
 }
 
@@ -439,37 +440,131 @@ button:focus-visible {
   line-height: 1.55;
 }
 
-.duration-options {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 9px;
+.time-wheel {
+  position: relative;
+  display: flex;
+  height: 220px;
+  overflow: hidden;
+  padding: 0 14px;
+  border: 2px solid #b5b7b3;
+  border-radius: 15px;
+  background: #fff;
 }
 
-.duration-option {
+.time-wheel-selected {
+  position: absolute;
+  z-index: 0;
+  top: 50%;
+  right: 14px;
+  left: 14px;
+  height: 48px;
+  transform: translateY(-50%);
+  border-radius: 12px;
+  background: #e9e9e9;
+  pointer-events: none;
+}
+
+.wheel-column {
+  position: relative;
+  z-index: 1;
+  min-width: 0;
+  flex: 1;
+}
+
+.wheel-viewport {
+  height: 100%;
+  overflow-y: auto;
+  padding: 86px 0;
+  outline: none;
+  scrollbar-width: none;
+  scroll-padding-block: 86px;
+  scroll-snap-type: y mandatory;
+  -webkit-overflow-scrolling: touch;
+  mask-image: linear-gradient(to bottom, transparent, #000 22%, #000 78%, transparent);
+}
+
+.wheel-viewport::-webkit-scrollbar {
+  display: none;
+}
+
+.wheel-option {
+  display: block;
+  width: 100%;
+  height: 48px;
+  padding: 0 48px 0 8px;
+  border: 0;
+  background: transparent;
+  color: #a6a7a5;
+  cursor: pointer;
+  font-size: 23px;
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  line-height: 48px;
+  text-align: right;
+  scroll-snap-align: center;
+}
+
+.wheel-option.selected {
+  color: #202220;
+  font-size: 26px;
+  font-weight: 850;
+}
+
+.wheel-unit {
+  position: absolute;
+  top: 50%;
+  right: 16px;
+  z-index: 2;
+  width: 32px;
+  transform: translateY(-50%);
+  color: #292b28;
+  font-size: 16px;
+  font-weight: 800;
+  pointer-events: none;
+}
+
+.duration-summary {
+  margin: 18px 0 20px;
+  color: #5e625e;
+  font-size: 14px;
+  text-align: center;
+}
+
+.duration-summary strong {
+  color: var(--ink);
+  font-weight: 800;
+}
+
+.modal-actions {
   display: flex;
-  min-height: 64px;
-  align-items: baseline;
-  justify-content: center;
-  gap: 5px;
-  border: 1px solid #e6e5df;
-  border-radius: 14px;
-  background: #fffefa;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.modal-actions .secondary-button,
+.confirm-button {
+  min-width: 112px;
+  min-height: 48px;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 750;
+}
+
+.confirm-button {
+  padding: 0 22px;
+  border: 1.5px solid var(--ink);
+  background: var(--ink);
+  color: white;
   cursor: pointer;
 }
 
-.duration-option strong {
-  font-size: 20px;
+.confirm-button:hover:not(:disabled) {
+  background: #414740;
 }
 
-.duration-option span {
-  color: var(--muted);
-  font-size: 12px;
-}
-
-.duration-option.selected {
-  border-color: #91a891;
-  background: #edf3eb;
-  color: #455a47;
+.confirm-button:disabled {
+  cursor: not-allowed;
+  opacity: .45;
 }
 
 .settings-note {
@@ -518,6 +613,19 @@ button:focus-visible {
   .primary-actions { margin-top: 10px; }
   .start-button { min-height: 60px; }
   .bottom-bar { min-height: 66px; }
+
+  .modal-card {
+    padding: 24px;
+  }
+
+  .time-wheel {
+    height: 202px;
+  }
+
+  .wheel-viewport {
+    padding-block: 77px;
+    scroll-padding-block: 77px;
+  }
 }
 
 @media (max-height: 650px) {

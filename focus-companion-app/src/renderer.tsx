@@ -1,10 +1,90 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState, type KeyboardEvent } from 'react'
 import { createRoot } from 'react-dom/client'
 import './index.css'
 
 type ModalName = 'duration' | 'settings' | 'closet' | null
 
-const sessionOptions = [15, 20, 25, 30, 45, 60]
+const hourOptions = [0, 1, 2, 3, 4]
+const minuteOptions = Array.from({ length: 12 }, (_, index) => index * 5)
+const wheelRowHeight = 48
+
+function WheelColumn({
+  label,
+  unit,
+  values,
+  value,
+  onChange,
+}: {
+  label: string
+  unit: string
+  values: number[]
+  value: number
+  onChange: (value: number) => void
+}) {
+  const wheelRef = useRef<HTMLDivElement>(null)
+  const settleTimeout = useRef<number | null>(null)
+
+  useEffect(() => {
+    const wheel = wheelRef.current
+    if (!wheel) return
+    wheel.scrollTop = values.indexOf(value) * wheelRowHeight
+  }, [])
+
+  useEffect(() => () => {
+    if (settleTimeout.current !== null) window.clearTimeout(settleTimeout.current)
+  }, [])
+
+  const selectValue = (index: number) => {
+    const safeIndex = Math.max(0, Math.min(values.length - 1, index))
+    onChange(values[safeIndex])
+    wheelRef.current?.scrollTo({ top: safeIndex * wheelRowHeight, behavior: 'smooth' })
+  }
+
+  const settleScroll = () => {
+    if (settleTimeout.current !== null) window.clearTimeout(settleTimeout.current)
+    settleTimeout.current = window.setTimeout(() => {
+      const wheel = wheelRef.current
+      if (!wheel) return
+      const index = Math.max(0, Math.min(values.length - 1, Math.round(wheel.scrollTop / wheelRowHeight)))
+      onChange(values[index])
+    }, 90)
+  }
+
+  const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
+    if (event.key !== 'ArrowUp' && event.key !== 'ArrowDown') return
+    event.preventDefault()
+    selectValue(values.indexOf(value) + (event.key === 'ArrowDown' ? 1 : -1))
+  }
+
+  return (
+    <div className={`wheel-column ${unit === 'hr' ? 'hours-column' : 'minutes-column'}`}>
+      <div
+        ref={wheelRef}
+        className="wheel-viewport"
+        role="listbox"
+        aria-label={label}
+        tabIndex={0}
+        onScroll={settleScroll}
+        onKeyDown={handleKeyDown}
+      >
+        {values.map((option, index) => (
+          <button
+            className={`wheel-option ${option === value ? 'selected' : ''}`}
+            key={option}
+            type="button"
+            role="option"
+            aria-selected={option === value}
+            tabIndex={-1}
+            onClick={() => selectValue(index)}
+          >
+            {String(option).padStart(2, '0')}
+          </button>
+        ))}
+      </div>
+      <span className="wheel-unit" aria-hidden="true">{unit}</span>
+    </div>
+  )
+}
 
 function formatTime(seconds: number) {
   const minutes = Math.floor(seconds / 60)
@@ -56,6 +136,7 @@ function App() {
   const [endsAt, setEndsAt] = useState<number | null>(null)
   const [isComplete, setIsComplete] = useState(false)
   const [modal, setModal] = useState<ModalName>(null)
+  const [draftDuration, setDraftDuration] = useState({ hours: 0, minutes: 20 })
 
   useEffect(() => {
     if (endsAt === null) return
@@ -104,6 +185,20 @@ function App() {
     setModal(null)
   }
 
+  const openDurationPicker = () => {
+    if (isRunning) return
+    setDraftDuration({
+      hours: Math.floor(sessionMinutes / 60),
+      minutes: sessionMinutes % 60,
+    })
+    setModal('duration')
+  }
+
+  const draftTotalMinutes = draftDuration.hours * 60 + draftDuration.minutes
+  const durationSummary = draftDuration.hours > 0
+    ? `${draftDuration.hours} hr ${draftDuration.minutes} min`
+    : `${draftDuration.minutes} min`
+
   const primaryAction = () => {
     if (isRunning) {
       pause()
@@ -142,7 +237,7 @@ function App() {
           <p className="session-detail">
             {sessionMinutes}-min session
             <span aria-hidden="true"> · </span>
-            <button className="text-button" onClick={() => !isRunning && setModal('duration')} disabled={isRunning}>
+            <button className="text-button" onClick={openDurationPicker} disabled={isRunning}>
               Change
             </button>
           </p>
@@ -186,22 +281,43 @@ function App() {
       {modal && (
         <div className="modal-backdrop" onMouseDown={(event) => event.target === event.currentTarget && setModal(null)}>
           <section className="modal-card" role="dialog" aria-modal="true" aria-labelledby="modal-title">
-            <button className="modal-close" aria-label="Close dialog" onClick={() => setModal(null)}>×</button>
+            {modal !== 'duration' && (
+              <button className="modal-close" aria-label="Close dialog" onClick={() => setModal(null)}>×</button>
+            )}
             {modal === 'duration' && (
               <>
-                <p className="eyebrow">MAKE IT YOURS</p>
-                <h2 id="modal-title">Choose a focus session</h2>
-                <p className="modal-description">Pick a length that feels manageable. You can change it again before you start.</p>
-                <div className="duration-options">
-                  {sessionOptions.map((minutes) => (
-                    <button
-                      className={`duration-option ${minutes === sessionMinutes ? 'selected' : ''}`}
-                      key={minutes}
-                      onClick={() => chooseDuration(minutes)}
-                    >
-                      <strong>{minutes}</strong><span>min</span>
-                    </button>
-                  ))}
+                <p className="eyebrow">STUDY BUDDY — SETTINGS</p>
+                <h2 id="modal-title">Session length</h2>
+                <p className="modal-description">Scroll the wheels to set your focus time.</p>
+                <div className="time-wheel" role="group" aria-label="Choose session length">
+                  <div className="time-wheel-selected" aria-hidden="true" />
+                  <WheelColumn
+                    label="Hours"
+                    unit="hr"
+                    values={hourOptions}
+                    value={draftDuration.hours}
+                    onChange={(hours) => setDraftDuration((current) => ({ ...current, hours }))}
+                  />
+                  <WheelColumn
+                    label="Minutes"
+                    unit="min"
+                    values={minuteOptions}
+                    value={draftDuration.minutes}
+                    onChange={(minutes) => setDraftDuration((current) => ({ ...current, minutes }))}
+                  />
+                </div>
+                <p className="duration-summary">
+                  Each session: <strong>{draftTotalMinutes > 0 ? durationSummary : 'choose at least 5 min'}</strong>
+                </p>
+                <div className="modal-actions">
+                  <button className="secondary-button" onClick={() => setModal(null)}>Cancel</button>
+                  <button
+                    className="confirm-button"
+                    disabled={draftTotalMinutes === 0}
+                    onClick={() => chooseDuration(draftTotalMinutes)}
+                  >
+                    Done
+                  </button>
                 </div>
               </>
             )}

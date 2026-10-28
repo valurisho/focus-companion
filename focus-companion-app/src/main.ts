@@ -300,14 +300,8 @@ function createTray() {
     : nativeImage.createFromPath(iconPath);
   const icon = diagnosticMode ? sourceIcon : sourceIcon.resize({ width: 16 });
   if (!diagnosticMode) icon.setTemplateImage(true);
-  console.info('[tray] creating item', {
-    diagnosticMode,
-    iconIsEmpty: icon.isEmpty(),
-    iconSize: icon.getSize(),
-  });
 
   tray = new Tray(icon);
-  console.info('[tray] item created', { bounds: tray.getBounds() });
   tray.setToolTip('Focus Companion timer');
   tray.setTitle(
     diagnosticMode ? '' : formatTime(timerState.remainingSeconds),

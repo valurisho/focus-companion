@@ -296,7 +296,7 @@ function createTray() {
   const iconPath = path.join(app.getAppPath(), 'assets', 'focusCompanionTemplate.png');
   const diagnosticMode = trayDiagnosticMode;
   const sourceIcon = diagnosticMode
-    ? nativeImage.createFromPath(path.join(app.getAppPath(), 'assets', 'focusCompanionDiagnostic.png'))
+    ? nativeImage.createFromPath(path.join(app.getAppPath(), 'assets', 'focusCompanionTemplate.png'))
     : nativeImage.createFromPath(iconPath);
   const icon = diagnosticMode ? sourceIcon : sourceIcon.resize({ width: 16 });
   if (!diagnosticMode) icon.setTemplateImage(true);

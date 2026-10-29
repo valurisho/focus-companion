@@ -567,6 +567,86 @@ button:focus-visible {
   opacity: .45;
 }
 
+.settings-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 16px 0 12px;
+  padding: 14px 16px;
+  border: 1.5px solid var(--line);
+  border-radius: 13px;
+}
+
+.settings-row-title {
+  display: block;
+  font-size: 13px;
+  font-weight: 750;
+}
+
+.settings-row-value {
+  display: block;
+  margin-top: 2px;
+  color: #4e524d;
+  font-size: 13px;
+}
+
+.settings-running-note {
+  margin: -4px 0 12px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.settings-name-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.settings-pencil {
+  display: grid;
+  place-items: center;
+  padding: 4px;
+  border: 0;
+  background: none;
+  color: #5e625d;
+  cursor: pointer;
+  line-height: 1;
+}
+
+.settings-pencil:hover {
+  color: var(--ink);
+}
+
+.settings-pencil:disabled {
+  color: var(--muted);
+  cursor: not-allowed;
+  opacity: 0.4;
+}
+
+.settings-name-hint {
+  margin: -6px 0 8px;
+  color: var(--muted);
+  font-size: 11px;
+  text-align: right;
+}
+
+.settings-input {
+  width: 120px;
+  padding: 6px 10px;
+  border: 1.5px solid var(--line);
+  border-radius: 8px;
+  background: var(--paper);
+  color: var(--ink);
+  font: inherit;
+  font-size: 13px;
+  text-align: right;
+}
+
+.settings-input:focus {
+  outline: 3px solid #91aa91;
+  outline-offset: 2px;
+}
+
 .settings-note {
   display: flex;
   align-items: center;

@@ -86,6 +86,14 @@ function WheelColumn({
   )
 }
 
+function formatDuration(totalMinutes: number) {
+  const h = Math.floor(totalMinutes / 60)
+  const m = totalMinutes % 60
+  if (h > 0 && m > 0) return `${h} hr ${m} min`
+  if (h > 0) return `${h} hr`
+  return `${m} min`
+}
+
 function formatTime(seconds: number) {
   const minutes = Math.floor(seconds / 60)
   const remainder = seconds % 60
@@ -136,7 +144,11 @@ function App() {
   const [endsAt, setEndsAt] = useState<number | null>(null)
   const [isComplete, setIsComplete] = useState(false)
   const [modal, setModal] = useState<ModalName>(null)
+  const [buddyName, setBuddyName] = useState('Buddy')
+  const [draftBuddyName, setDraftBuddyName] = useState('Buddy')
+  const [isEditingName, setIsEditingName] = useState(false)
   const [draftDuration, setDraftDuration] = useState({ hours: 0, minutes: 20 })
+  const durationReturnTo = useRef<ModalName>(null)
 
   useEffect(() => {
     if (endsAt === null) return
@@ -182,11 +194,13 @@ function App() {
     setSecondsLeft(minutes * 60)
     setEndsAt(null)
     setIsComplete(false)
-    setModal(null)
+    setModal(durationReturnTo.current)
+    durationReturnTo.current = null
   }
 
-  const openDurationPicker = () => {
+  const openDurationPicker = (returnTo: ModalName = null) => {
     if (isRunning) return
+    durationReturnTo.current = returnTo
     setDraftDuration({
       hours: Math.floor(sessionMinutes / 60),
       minutes: sessionMinutes % 60,
@@ -211,6 +225,11 @@ function App() {
     }
   }
 
+  const saveName = () => {
+    const trimmed = draftBuddyName.trim()
+    if (trimmed) { setBuddyName(trimmed); setIsEditingName(false) }
+  }
+
   return (
     <main className="app-shell">
       <section className="study-window" aria-label="Focus Companion study screen">
@@ -222,7 +241,7 @@ function App() {
               <h1>Study Buddy</h1>
             </div>
           </div>
-          <span className="buddy-status"><span /> Buddy is here</span>
+          <span className="buddy-status"><span /> {buddyName || 'Buddy'} is here</span>
         </header>
 
         <section className="focus-content" aria-label="Focus timer and companion">
@@ -237,7 +256,7 @@ function App() {
           <p className="session-detail">
             {sessionMinutes}-min session
             <span aria-hidden="true"> · </span>
-            <button className="text-button" onClick={openDurationPicker} disabled={isRunning}>
+            <button className="text-button" onClick={() => openDurationPicker()} disabled={isRunning}>
               Change
             </button>
           </p>
@@ -247,7 +266,7 @@ function App() {
           </div>
 
           <div className="buddy-caption">
-            <h2>Buddy</h2>
+            <h2>{buddyName || 'Buddy'}</h2>
             <p>{isComplete ? 'Lovely work — your buddy is proud of you!' : 'No accessories yet — finish a session to earn one'}</p>
           </div>
 
@@ -272,7 +291,7 @@ function App() {
             <span className="coming-soon">Coming soon</span>
           </div>
           <div className="footer-actions">
-            <button className="secondary-button" onClick={() => setModal('settings')}>Settings</button>
+            <button className="secondary-button" onClick={() => { setIsEditingName(false); setModal('settings') }}>Settings</button>
             <button className="secondary-button" onClick={() => setModal('closet')}>Closet</button>
           </div>
         </footer>
@@ -310,7 +329,7 @@ function App() {
                   Each session: <strong>{draftTotalMinutes > 0 ? durationSummary : 'choose at least 5 min'}</strong>
                 </p>
                 <div className="modal-actions">
-                  <button className="secondary-button" onClick={() => setModal(null)}>Cancel</button>
+                  <button className="secondary-button" onClick={() => { setModal(durationReturnTo.current); durationReturnTo.current = null }}>Cancel</button>
                   <button
                     className="confirm-button"
                     disabled={draftTotalMinutes === 0}
@@ -325,8 +344,53 @@ function App() {
               <>
                 <p className="eyebrow">YOUR PREFERENCES</p>
                 <h2 id="modal-title">Settings</h2>
-                <p className="modal-description">Your focus session is set to {sessionMinutes} minutes. Use “Change” on the timer to choose another duration.</p>
-                <div className="settings-note"><span>✦</span><p>More ways to personalize your study space are on the way.</p></div>
+                <div className="settings-row">
+                  {isEditingName ? (
+                    <>
+                      <label className="settings-row-title" htmlFor="buddy-name-input">Study Buddy name</label>
+                      <input
+                        id="buddy-name-input"
+                        className="settings-input"
+                        type="text"
+                        value={draftBuddyName}
+                        onChange={(e) => setDraftBuddyName(e.target.value)}
+                        onKeyDown={(e) => { if (e.key === 'Enter') saveName(); if (e.key === 'Escape') setIsEditingName(false) }}
+                        maxLength={20}
+                        autoFocus
+                      />
+                    </>
+                  ) : (
+                    <>
+                      <span className="settings-row-title">Study Buddy name</span>
+                      <div className="settings-name-actions">
+                        <span className="settings-row-value">{buddyName}</span>
+                        <button className="settings-pencil" onClick={() => { setDraftBuddyName(buddyName); setIsEditingName(true) }} aria-label="Edit buddy name">
+                          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+                            <path d="M9.5 1.5l3 3L4 13H1v-3L9.5 1.5z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                          </svg>
+                        </button>
+                      </div>
+                    </>
+                  )}
+                </div>
+                {isEditingName && <p className="settings-name-hint">Enter to save · Esc to cancel</p>}
+                <div className="settings-row">
+                  <span className="settings-row-title">Session length</span>
+                  <div className="settings-name-actions">
+                    <span className="settings-row-value">{formatDuration(sessionMinutes)}</span>
+                    <button
+                      className="settings-pencil"
+                      onClick={() => openDurationPicker('settings')}
+                      disabled={isRunning}
+                      aria-label={isRunning ? 'Cannot change session length while timer is running' : 'Change session length'}
+                    >
+                      <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+                        <path d="M9.5 1.5l3 3L4 13H1v-3L9.5 1.5z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+                {isRunning && <p className="settings-running-note">Pause the timer to change session length.</p>}
               </>
             )}
             {modal === 'closet' && (

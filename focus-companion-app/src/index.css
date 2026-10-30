@@ -1083,3 +1083,160 @@ button:focus-visible {
   .try-on-buddy { min-height: 125px; }
   .try-on-avatar { width: 105px; height: 105px; }
 }
+
+.buddy-book path {
+  fill: #fffefa;
+  stroke: #343a34;
+  stroke-width: 2.5;
+  stroke-linejoin: round;
+}
+
+.buddy-book path:last-child { fill: none; }
+
+.session-mode-content {
+  width: min(100% - 36px, 420px);
+  justify-content: center;
+  padding: 12px 0;
+}
+
+.session-mode-content .session-status {
+  min-height: 29px;
+  padding: 0 13px;
+  font-size: 9px;
+}
+
+.session-status.paused {
+  border-color: #dfd3b8;
+  background: #fbf6ea;
+  color: #7e6842;
+}
+
+.session-status.paused .status-dot,
+.session-status.break .status-dot {
+  background: #d4a54f;
+}
+
+.session-status.break {
+  border-color: #d9ded5;
+  background: #f4f5f0;
+  color: #626b5f;
+}
+
+.session-mode-content .timer {
+  margin-top: 3px;
+  font-size: clamp(62px, 15vw, 82px);
+  line-height: 1;
+}
+
+.timer-progress {
+  width: min(100%, 340px);
+  height: 8px;
+  overflow: hidden;
+  border: 1.5px solid #aeb2aa;
+  border-radius: 99px;
+  background: #fffefa;
+}
+
+.timer-progress span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: repeating-linear-gradient(135deg, #858a82 0 3px, #f2f2ed 3px 6px);
+  transition: width .35s linear;
+}
+
+.session-mode-content .session-detail {
+  margin: 7px 0 9px;
+  font-size: 12px;
+  text-align: center;
+}
+
+.session-scene {
+  width: min(100%, 340px);
+}
+
+.session-caption {
+  margin-top: 6px;
+}
+
+.session-caption p {
+  max-width: 330px;
+  margin: 0;
+  font-size: 11px;
+  line-height: 1.35;
+}
+
+.timer-actions {
+  width: min(100%, 280px);
+  margin-top: 10px;
+  gap: 6px;
+}
+
+.timer-actions .start-button,
+.result-actions .start-button {
+  min-height: 46px;
+  border-radius: 10px;
+  font-size: 16px;
+}
+
+.extend-button {
+  width: 100%;
+  min-height: 44px;
+  padding: 8px 14px;
+  border: 1.5px solid #343734;
+  border-radius: 10px;
+  background: #fffefa;
+  color: var(--ink);
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 750;
+}
+
+.extend-button:hover { background: #f3f3ef; }
+.reset-session-button { font-size: 14px; }
+
+.timer-result {
+  display: flex;
+  width: min(100%, 390px);
+  flex-direction: column;
+  align-items: center;
+}
+
+.result-title {
+  margin: 7px 0 0;
+  font-size: 21px;
+  font-weight: 850;
+  letter-spacing: -.035em;
+  text-align: center;
+}
+
+.result-copy {
+  margin: 3px 0 7px;
+  color: #5f645d;
+  font-size: 12px;
+  text-align: center;
+}
+
+.result-scene { width: min(100%, 350px); }
+
+.result-actions {
+  display: flex;
+  width: min(100%, 350px);
+  flex-direction: column;
+  gap: 7px;
+  margin-top: 8px;
+}
+
+@media (max-height: 650px) {
+  .session-mode-content { padding: 7px 0; }
+  .session-mode-content .timer { font-size: clamp(54px, 12vw, 68px); }
+  .session-mode-content .session-detail { margin: 4px 0 6px; }
+  .session-caption { margin-top: 4px; }
+  .timer-actions { margin-top: 7px; }
+  .timer-actions .start-button,
+  .result-actions .start-button { min-height: 40px; }
+  .extend-button { min-height: 39px; }
+  .result-title { margin-top: 4px; font-size: 18px; }
+  .result-copy { margin-bottom: 5px; }
+  .result-actions { gap: 5px; margin-top: 6px; }
+}

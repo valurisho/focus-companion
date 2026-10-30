@@ -28,6 +28,7 @@ let timerEndsAt: number | null = null;
 let timerInterval: ReturnType<typeof setInterval> | null = null;
 let timerState: TimerSnapshot = {
   status: 'ready',
+  mode: 'focus',
   durationMinutes: initialDurationMinutes,
   remainingSeconds: initialDurationMinutes * 60,
 };
@@ -112,9 +113,39 @@ function setTimerDuration(minutes: number): TimerSnapshot {
   timerEndsAt = null;
   timerState = {
     status: 'ready',
+    mode: 'focus',
     durationMinutes: minutes,
     remainingSeconds: minutes * 60,
   };
+  return publishTimerState();
+}
+
+function startFocusTimer(minutes: number): TimerSnapshot {
+  if (!Number.isInteger(minutes) || minutes < 5 || minutes > 295) {
+    throw new Error('Timer duration must be between 5 and 295 whole minutes.');
+  }
+
+  timerState = {
+    status: 'running',
+    mode: 'focus',
+    durationMinutes: minutes,
+    remainingSeconds: minutes * 60,
+  };
+  timerEndsAt = Date.now() + minutes * 60 * 1000;
+  ensureTimerInterval();
+  return publishTimerState();
+}
+
+function startBreakTimer(): TimerSnapshot {
+  const minutes = 5;
+  timerState = {
+    status: 'running',
+    mode: 'break',
+    durationMinutes: minutes,
+    remainingSeconds: minutes * 60,
+  };
+  timerEndsAt = Date.now() + minutes * 60 * 1000;
+  ensureTimerInterval();
   return publishTimerState();
 }
 
@@ -122,6 +153,7 @@ function resetTimer(): TimerSnapshot {
   timerEndsAt = null;
   timerState = {
     status: 'ready',
+    mode: timerState.mode,
     durationMinutes: timerState.durationMinutes,
     remainingSeconds: timerState.durationMinutes * 60,
   };
@@ -141,6 +173,16 @@ function registerTimerIpc() {
   ipcMain.handle('timer:start', (event) => {
     if (!isTrustedRenderer(event)) throw new Error('Untrusted renderer requested timer start.');
     return startTimer();
+  });
+
+  ipcMain.handle('timer:start-focus', (event, minutes: number) => {
+    if (!isTrustedRenderer(event)) throw new Error('Untrusted renderer requested a focus timer.');
+    return startFocusTimer(minutes);
+  });
+
+  ipcMain.handle('timer:start-break', (event) => {
+    if (!isTrustedRenderer(event)) throw new Error('Untrusted renderer requested a break timer.');
+    return startBreakTimer();
   });
 
   ipcMain.handle('timer:pause', (event) => {

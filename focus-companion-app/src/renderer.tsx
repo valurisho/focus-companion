@@ -123,6 +123,7 @@ function formatTime(seconds: number) {
 function useTimerSnapshot() {
   const [snapshot, setSnapshot] = useState<TimerSnapshot>({
     status: 'ready',
+    mode: 'focus',
     durationMinutes: 20,
     remainingSeconds: 20 * 60,
   })
@@ -148,13 +149,15 @@ function useTimerSnapshot() {
 
 function TimerPopup() {
   const timer = useTimerSnapshot()
-  const statusLabel = timer.status === 'running'
-    ? 'FOCUSING'
-    : timer.status === 'paused'
-      ? 'PAUSED'
-      : timer.status === 'complete'
-        ? 'SESSION COMPLETE'
-        : 'FOCUS TIMER'
+  const statusLabel = timer.mode === 'break'
+    ? timer.status === 'complete' ? 'BREAK COMPLETE' : timer.status === 'paused' ? 'BREAK PAUSED' : 'BREAK TIME'
+    : timer.status === 'running'
+      ? 'FOCUSING'
+      : timer.status === 'paused'
+        ? 'PAUSED'
+        : timer.status === 'complete'
+          ? 'SESSION COMPLETE'
+          : 'FOCUS TIMER'
 
   return (
     <main className="timer-popup-screen" aria-label="Focus Companion timer">
@@ -169,7 +172,7 @@ function TimerPopup() {
   )
 }
 
-function BuddyScene({ look, accessory }: { look: BuddyLook; accessory?: ClosetAccessory }) {
+function BuddyScene({ look, accessory, showBook = false }: { look: BuddyLook; accessory?: ClosetAccessory; showBook?: boolean }) {
   return (
     <svg
       className="buddy-scene"
@@ -210,6 +213,7 @@ function BuddyScene({ look, accessory }: { look: BuddyLook; accessory?: ClosetAc
           <ellipse cx="340" cy="139" rx="5.5" ry="6.5" />
           <path d="M309 155q11 11 22 0" />
         </>}
+        {showBook && <g className="buddy-book"><path d="M296 158q12-7 24 0v31q-12-7-24 0z" /><path d="M320 158q12-7 24 0v31q-12-7-24 0z" /><path d="M320 159v31" /></g>}
         {accessory && <AccessoryDecoration accessory={accessory} />}
       </g>
     </svg>
@@ -240,6 +244,8 @@ function App() {
   const isRunning = timer.status === 'running'
   const isComplete = timer.status === 'complete'
   const isPaused = timer.status === 'paused'
+  const isBreak = timer.mode === 'break'
+  const isTimedSession = isRunning || isPaused || isComplete || isBreak
   const [profile, setProfile] = useState<UserProfile | null>(null)
   const [authEmail, setAuthEmail] = useState('')
   const [buddyLook, setBuddyLook] = useState<BuddyLook>('blob')
@@ -276,12 +282,12 @@ function App() {
     })
   }, [])
   const status = isComplete
-    ? 'SESSION COMPLETE'
+    ? isBreak ? 'BREAK COMPLETE' : 'SESSION COMPLETE'
     : isRunning
-      ? 'FOCUS IN PROGRESS'
+      ? isBreak ? 'BREAK TIME' : 'FOCUSING'
       : isPaused
-        ? 'PAUSED — TAKE YOUR TIME'
-        : 'READY TO FOCUS'
+        ? isBreak ? 'BREAK PAUSED' : 'PAUSED'
+        : isBreak ? 'BREAK READY' : 'READY TO FOCUS'
 
   useEffect(() => {
     if (modal !== 'closet' || !profile) return
@@ -327,13 +333,13 @@ function App() {
 
   useEffect(() => {
     const previousStatus = lastTimerStatus.current
-    if (timer.status === 'running' && (previousStatus === 'ready' || previousStatus === 'complete')) {
+    if (timer.mode === 'focus' && timer.status === 'running' && (previousStatus === 'ready' || previousStatus === 'complete')) {
       sessionCapture.current = { id: crypto.randomUUID(), startedAt: new Date().toISOString() }
     } else if (timer.status === 'ready' && previousStatus !== 'ready') {
       sessionCapture.current = null
     }
 
-    const completedCapture = timer.status === 'complete' && previousStatus === 'running'
+    const completedCapture = timer.mode === 'focus' && timer.status === 'complete' && previousStatus === 'running'
       ? sessionCapture.current
       : null
     if (completedCapture) sessionCapture.current = null
@@ -355,7 +361,7 @@ function App() {
         }
       })
     }
-  }, [timer.status, timer.durationMinutes, profile])
+  }, [timer.status, timer.mode, timer.durationMinutes, profile])
 
   const startOrResume = () => {
     void window.focusCompanion.startTimer()
@@ -479,63 +485,131 @@ function App() {
           <span className="buddy-status"><span /> {buddyName || 'Buddy'} is here</span>
         </header>
 
-        <section className="focus-content" aria-label="Focus timer and companion">
-          <div className={`session-status ${isComplete ? 'complete' : ''}`}>
-            <span className="status-dot" />
-            {status}
-          </div>
-
-          <div className="timer" role="timer" aria-label={`${formatTime(secondsLeft)} remaining`}>
-            {formatTime(secondsLeft)}
-          </div>
-          <p className="session-detail">
-            {sessionMinutes}-min session
-            <span aria-hidden="true"> · </span>
-            <button className="text-button" onClick={() => openDurationPicker()} disabled={isRunning}>
-              Change
-            </button>
-          </p>
-
-          <div className="scene-frame">
-            <BuddyScene look={buddyLook} accessory={equippedAccessory} />
-          </div>
-
-          <div className="buddy-caption">
-            <h2>{buddyName || 'Buddy'}</h2>
-            <p>
-              {isComplete
-                ? 'Lovely work — your buddy is proud of you!'
-                : equippedAccessory
-                  ? `Wearing ${equippedAccessory.name} — complete sessions to earn more`
-                  : 'Finish a focus session to earn your first accessory'}
-            </p>
-          </div>
-
-          <div className="primary-actions">
-            <button className="start-button" onClick={primaryAction}>
-              {isRunning ? 'Pause' : isPaused ? 'Resume' : isComplete ? 'Start another session' : 'Start'}
-            </button>
-            {(isRunning || isPaused) && (
-              <button className="reset-button" onClick={() => window.focusCompanion.resetTimer()}>
-                End session
-              </button>
-            )}
-          </div>
+        <section className={`focus-content ${isTimedSession ? 'session-mode-content' : ''}`} aria-label="Focus timer and companion">
+          {isComplete ? (
+            <div className={`timer-result ${isBreak ? 'break-result' : ''}`}>
+              <div className="session-status complete">
+                <span className="status-dot" />
+                {status}
+              </div>
+              <h2 className="result-title">{isBreak ? 'Break complete' : 'Nice work!'}</h2>
+              <p className="result-copy">
+                {isBreak ? 'Ready to start another focus session?' : `You focused for ${formatDuration(sessionMinutes)}.`}
+              </p>
+              <div className="scene-frame result-scene">
+                <BuddyScene look={buddyLook} accessory={equippedAccessory} />
+              </div>
+              <div className="result-actions">
+                {isBreak ? (
+                  <button className="start-button" onClick={() => { void window.focusCompanion.startFocusTimer(profile.session_minutes) }}>
+                    Start a focus session
+                  </button>
+                ) : (
+                  <>
+                    <button className="start-button" onClick={() => { void window.focusCompanion.startBreakTimer() }}>
+                      Take a Break (5 min)
+                    </button>
+                    <button className="extend-button" onClick={() => { void window.focusCompanion.startFocusTimer(20) }}>
+                      Extend 20 Minutes
+                    </button>
+                  </>
+                )}
+              </div>
+            </div>
+          ) : isTimedSession ? (
+            <>
+              <div className={`session-status ${isPaused ? 'paused' : ''} ${isBreak ? 'break' : ''}`}>
+                <span className="status-dot" />
+                {status}
+              </div>
+              <div className="timer" role="timer" aria-label={`${formatTime(secondsLeft)} remaining`}>
+                {formatTime(secondsLeft)}
+              </div>
+              <div
+                className="timer-progress"
+                role="progressbar"
+                aria-label={isBreak ? 'Break progress' : 'Focus session progress'}
+                aria-valuemin={0}
+                aria-valuemax={100}
+                aria-valuenow={Math.round(((sessionMinutes * 60 - secondsLeft) / (sessionMinutes * 60)) * 100)}
+              >
+                <span style={{ width: `${Math.min(100, Math.max(0, ((sessionMinutes * 60 - secondsLeft) / (sessionMinutes * 60)) * 100))}%` }} />
+              </div>
+              <p className="session-detail">
+                {isBreak ? `${sessionMinutes}-minute break` : 'Stay with your focus session'}
+              </p>
+              <div className="scene-frame session-scene">
+                <BuddyScene look={buddyLook} accessory={equippedAccessory} showBook={isRunning && !isBreak} />
+              </div>
+              <div className="buddy-caption session-caption">
+                <p>
+                  {isBreak
+                    ? 'Take a few minutes away from your desk.'
+                    : isPaused
+                      ? `Paused at ${formatTime(secondsLeft)}. Continue whenever you are ready.`
+                      : `${buddyName || 'Buddy'} is reading with you.`}
+                </p>
+              </div>
+              <div className="primary-actions timer-actions">
+                <button className="start-button" onClick={isRunning ? pause : startOrResume}>
+                  {isRunning ? 'Pause' : isPaused ? 'Continue' : isBreak ? 'Start break' : 'Start'}
+                </button>
+                {isPaused && (
+                  <button className="extend-button reset-session-button" onClick={() => { void window.focusCompanion.resetTimer() }}>
+                    Reset session
+                  </button>
+                )}
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="session-status">
+                <span className="status-dot" />
+                {status}
+              </div>
+              <div className="timer" role="timer" aria-label={`${formatTime(secondsLeft)} remaining`}>
+                {formatTime(secondsLeft)}
+              </div>
+              <p className="session-detail">
+                {sessionMinutes}-min session
+                <span aria-hidden="true"> · </span>
+                <button className="text-button" onClick={() => openDurationPicker()}>
+                  Change
+                </button>
+              </p>
+              <div className="scene-frame">
+                <BuddyScene look={buddyLook} accessory={equippedAccessory} />
+              </div>
+              <div className="buddy-caption">
+                <h2>{buddyName || 'Buddy'}</h2>
+                <p>
+                  {equippedAccessory
+                    ? `Wearing ${equippedAccessory.name} — complete sessions to earn more`
+                    : 'Finish a focus session to earn your first accessory'}
+                </p>
+              </div>
+              <div className="primary-actions">
+                <button className="start-button" onClick={primaryAction}>Start</button>
+              </div>
+            </>
+          )}
         </section>
 
-        <footer className="bottom-bar">
-          <div className="max-focus" aria-label="Max Focus is coming soon">
-            <button className="switch" type="button" disabled aria-label="Max Focus off, coming soon">
-              <span />
-            </button>
-            <span className="max-focus-label">Max Focus</span>
-            <span className="coming-soon">Coming soon</span>
-          </div>
-          <div className="footer-actions">
-            <button className="secondary-button" onClick={() => { setIsEditingName(false); setModal('settings') }}>Settings</button>
-            <button className="secondary-button" onClick={() => { setClosetPage('grid'); setModal('closet') }}>Closet</button>
-          </div>
-        </footer>
+        {!isTimedSession && (
+          <footer className="bottom-bar">
+            <div className="max-focus" aria-label="Max Focus is coming soon">
+              <button className="switch" type="button" disabled aria-label="Max Focus off, coming soon">
+                <span />
+              </button>
+              <span className="max-focus-label">Max Focus</span>
+              <span className="coming-soon">Coming soon</span>
+            </div>
+            <div className="footer-actions">
+              <button className="secondary-button" onClick={() => { setIsEditingName(false); setModal('settings') }}>Settings</button>
+              <button className="secondary-button" onClick={() => { setClosetPage('grid'); setModal('closet') }}>Closet</button>
+            </div>
+          </footer>
+        )}
       </section>
 
       {modal && (

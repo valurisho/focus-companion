@@ -73,7 +73,7 @@ function formatDuration(minutes: number) {
   return `${minutes} min`
 }
 
-function BuddyAvatar({ look, className = '' }: { look: BuddyLook; className?: string }) {
+export function BuddyAvatar({ look, className = '' }: { look: BuddyLook; className?: string }) {
   return (
     <svg className={className} viewBox="0 0 72 72" aria-hidden="true">
       {look === 'cat' && <path className="avatar-ears" d="M15 31 18 8l18 15L54 8l3 23" />}

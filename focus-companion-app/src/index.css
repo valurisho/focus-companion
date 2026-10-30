@@ -1004,3 +1004,82 @@ button:focus-visible {
   .welcome-buddy { width: 84px; height: 84px; margin-bottom: 11px; }
   .welcome-card .onboarding-copy { margin-bottom: 14px; }
 }
+
+.buddy-accessory { fill: #9c9d9a; stroke: #343a34; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
+.buddy-accessory.glasses-accessory { fill: none; stroke-width: 3; }
+.buddy-accessory.scarf-accessory { fill: #d88e73; }
+.buddy-accessory.headphones-accessory { fill: #d7d8d2; stroke-width: 4; }
+.buddy-accessory.backpack-accessory { fill: #c59a74; stroke-width: 3; }
+.buddy-accessory-icon { fill: #343a34; stroke: none; font-size: 23px; }
+
+.closet-modal {
+  width: min(100%, 460px);
+  max-height: calc(100vh - 42px);
+  overflow-y: auto;
+  padding: 20px;
+}
+
+.closet-view { display: flex; flex-direction: column; min-height: 0; }
+.closet-heading { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 8px; margin-bottom: 13px; }
+.closet-heading h2 { margin: 0; font-size: 20px; text-align: center; }
+.closet-back-button { justify-self: start; min-height: 34px; padding: 0 10px; border: 1.5px solid #343734; border-radius: 9px; background: white; font-size: 11px; font-weight: 750; cursor: pointer; }
+.closet-count { justify-self: end; color: #686d66; font-size: 10px; white-space: nowrap; }
+.closet-buddy-card { display: flex; min-height: 78px; align-items: center; gap: 12px; padding: 9px; border: 1px solid #d9ddd5; border-radius: 12px; }
+.closet-buddy-avatar { position: relative; display: grid; width: 64px; height: 60px; flex: 0 0 auto; place-items: center; border: 1px dashed #c9cdc5; border-radius: 10px; background: #f4f4ef; }
+.closet-avatar { width: 49px; height: 49px; }
+.closet-worn-icon { position: absolute; top: 0; right: 2px; display: grid; width: 22px; height: 22px; place-items: center; border-radius: 50%; background: white; box-shadow: 0 1px 5px rgb(0 0 0 / 12%); font-size: 13px; }
+.closet-buddy-copy { display: flex; min-width: 0; flex-direction: column; gap: 4px; }
+.closet-buddy-copy strong { font-size: 12px; }
+.closet-buddy-copy span { overflow: hidden; color: #61665f; font-size: 10px; text-overflow: ellipsis; white-space: nowrap; }
+.closet-section-label { margin: 12px 0 6px; color: #626760; font-size: 9px; font-weight: 850; letter-spacing: .12em; }
+.accessory-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 7px; }
+.accessory-tile { display: flex; min-width: 0; min-height: 80px; flex-direction: column; align-items: center; justify-content: center; gap: 3px; padding: 6px 4px; border: 1px solid #d6dad2; border-radius: 10px; background: #fffefa; color: var(--ink); text-align: center; }
+.accessory-tile.earned { cursor: pointer; }
+.accessory-tile.earned:hover { border-color: #707c70; background: #f5f7f2; }
+.accessory-tile.equipped { border: 2px solid #343734; }
+.accessory-tile.locked { border-style: dashed; background: #f3f3ef; color: #81857f; cursor: not-allowed; }
+.accessory-tile-icon { display: grid; width: 28px; height: 28px; place-items: center; border: 1px solid #d6d9d2; border-radius: 7px; background: #efefea; font-size: 17px; }
+.accessory-tile strong { overflow: hidden; width: 100%; font-size: 9px; text-overflow: ellipsis; white-space: nowrap; }
+.accessory-tile-status { color: #666b64; font-size: 8px; line-height: 1.2; }
+.accessory-tile.locked .accessory-tile-status { color: #858981; }
+.closet-empty-state { display: flex; min-height: 145px; flex-direction: column; align-items: center; justify-content: center; padding: 15px; text-align: center; }
+.closet-empty-symbol { display: grid; width: 46px; height: 46px; place-items: center; margin-bottom: 5px; border: 1px dashed #c8ccc4; border-radius: 13px; color: #99a093; font-size: 24px; }
+.closet-empty-state h3 { margin: 4px 0; font-size: 14px; }
+.closet-empty-state p, .closet-empty-hint { margin: 4px 0; color: #666b64; font-size: 10px; line-height: 1.45; text-align: center; }
+.closet-primary-action { min-height: 40px; margin-top: 12px; border: 1px solid #242723; border-radius: 9px; background: #242723; color: white; font-size: 12px; font-weight: 800; cursor: pointer; }
+.closet-primary-action:hover { background: #414740; }
+.closet-empty-hint { margin-top: 7px; }
+.closet-feedback { padding: 25px 0; color: var(--muted); font-size: 12px; text-align: center; }
+.closet-error { display: flex; flex-direction: column; gap: 8px; padding: 11px; border-radius: 9px; background: #f9ebe7; color: #8b3c2e; font-size: 10px; line-height: 1.4; overflow-wrap: anywhere; }
+.closet-error button { align-self: flex-end; padding: 4px 9px; border: 1px solid currentColor; border-radius: 7px; background: white; color: inherit; cursor: pointer; }
+.closet-try-on { display: flex; flex-direction: column; align-items: center; }
+.try-on-stage { display: grid; width: 100%; grid-template-columns: 42px minmax(0, 1fr) 42px; align-items: center; gap: 10px; }
+.try-on-arrow { width: 38px; height: 38px; border: 1.5px solid #343734; border-radius: 50%; background: white; font-size: 22px; cursor: pointer; }
+.try-on-arrow:disabled { opacity: .35; cursor: default; }
+.try-on-buddy { position: relative; display: grid; min-height: 170px; place-items: center; border: 2px dashed #aeb2aa; border-radius: 16px; background: #f3f3ef; }
+.try-on-avatar { width: 135px; height: 135px; }
+.try-on-icon { position: absolute; top: 14px; display: grid; width: 44px; height: 44px; place-items: center; border: 1.5px solid #343734; border-radius: 12px; background: #deded9; font-size: 24px; }
+.try-on-name { margin: 9px 0 2px; font-size: 16px; text-align: center; }
+.try-on-earned { min-height: 15px; margin: 0; color: #666b64; font-size: 10px; text-align: center; }
+.try-on-dots { display: flex; justify-content: center; gap: 6px; margin: 9px 0 13px; }
+.try-on-dots span { width: 7px; height: 7px; border: 1px solid #343734; border-radius: 50%; background: transparent; }
+.try-on-dots span.active { background: #343734; }
+.try-on-equip-button { width: 100%; min-height: 42px; border: 1.5px solid #343734; border-radius: 9px; background: white; font-size: 12px; font-weight: 800; cursor: pointer; }
+.try-on-equip-button:hover:not(:disabled) { background: #f2f2ed; }
+.try-on-equip-button:disabled { opacity: .65; cursor: wait; }
+.try-on-done { margin-top: 10px; padding: 4px; border: 0; background: none; color: #464b45; font-size: 10px; text-decoration: underline; cursor: pointer; }
+
+@media (max-width: 390px) {
+  .closet-modal { padding: 14px; }
+  .accessory-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+
+@media (max-height: 580px) {
+  .closet-modal { padding: 13px; }
+  .closet-buddy-card { min-height: 62px; }
+  .closet-buddy-avatar { width: 52px; height: 48px; }
+  .closet-avatar { width: 40px; height: 40px; }
+  .accessory-tile { min-height: 68px; }
+  .try-on-buddy { min-height: 125px; }
+  .try-on-avatar { width: 105px; height: 105px; }
+}

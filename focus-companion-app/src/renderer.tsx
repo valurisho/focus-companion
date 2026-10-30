@@ -2,9 +2,27 @@ import { useCallback, useEffect, useRef, useState, type KeyboardEvent } from 're
 import { createRoot } from 'react-dom/client'
 import './index.css'
 import { supabase } from './utils/supabase'
-import { OnboardingFlow, type BuddyLook, type UserProfile } from './onboarding'
+import { BuddyAvatar, OnboardingFlow, type BuddyLook, type UserProfile } from './onboarding'
 
 type ModalName = 'duration' | 'settings' | 'closet' | null
+type ClosetPage = 'grid' | 'try-on'
+
+interface ClosetAccessory {
+  id: string
+  name: string
+  description: string
+  is_active: boolean
+  slot: string
+  icon: string
+  unlock_sessions: number
+  sort_order: number
+}
+
+interface OwnedAccessory {
+  accessory_id: string
+  unlocked_at: string
+  is_equipped: boolean
+}
 
 const hourOptions = [0, 1, 2, 3, 4]
 const minuteOptions = Array.from({ length: 12 }, (_, index) => index * 5)
@@ -151,7 +169,7 @@ function TimerPopup() {
   )
 }
 
-function BuddyScene({ look }: { look: BuddyLook }) {
+function BuddyScene({ look, accessory }: { look: BuddyLook; accessory?: ClosetAccessory }) {
   return (
     <svg
       className="buddy-scene"
@@ -192,9 +210,27 @@ function BuddyScene({ look }: { look: BuddyLook }) {
           <ellipse cx="340" cy="139" rx="5.5" ry="6.5" />
           <path d="M309 155q11 11 22 0" />
         </>}
+        {accessory && <AccessoryDecoration accessory={accessory} />}
       </g>
     </svg>
   )
+}
+
+function AccessoryDecoration({ accessory }: { accessory: ClosetAccessory }) {
+  switch (accessory.slot) {
+    case 'hat':
+      return <g className="buddy-accessory"><path d="m288 87 32-15 32 15-32 12z" /><path d="M299 92v13q21 9 42 0V92" /></g>
+    case 'glasses':
+      return <g className="buddy-accessory glasses-accessory"><circle cx="300" cy="139" r="12" /><circle cx="340" cy="139" r="12" /><path d="M312 139h16" /></g>
+    case 'scarf':
+      return <g className="buddy-accessory scarf-accessory"><path d="M284 169q36 13 72 0l-4 17q-32 14-64 0z" /><path d="M342 181v20l-12-5" /></g>
+    case 'headphones':
+      return <g className="buddy-accessory headphones-accessory"><path d="M270 142a50 50 0 0 1 100 0" /><rect x="263" y="137" width="13" height="28" rx="6" /><rect x="364" y="137" width="13" height="28" rx="6" /></g>
+    case 'backpack':
+      return <g className="buddy-accessory backpack-accessory"><rect x="238" y="148" width="24" height="47" rx="8" /><path d="M244 159h12m-12 8h12" /></g>
+    default:
+      return <text className="buddy-accessory-icon" x="320" y="82" textAnchor="middle">{accessory.icon || '✦'}</text>
+  }
 }
 
 function App() {
@@ -208,12 +244,23 @@ function App() {
   const [authEmail, setAuthEmail] = useState('')
   const [buddyLook, setBuddyLook] = useState<BuddyLook>('blob')
   const [profileMessage, setProfileMessage] = useState('')
+  const [closetAccessories, setClosetAccessories] = useState<ClosetAccessory[]>([])
+  const [ownedAccessories, setOwnedAccessories] = useState<OwnedAccessory[]>([])
+  const [completedSessionCount, setCompletedSessionCount] = useState(0)
+  const [closetRefreshVersion, setClosetRefreshVersion] = useState(0)
+  const [closetPage, setClosetPage] = useState<ClosetPage>('grid')
+  const [selectedAccessoryId, setSelectedAccessoryId] = useState<string | null>(null)
+  const [closetLoading, setClosetLoading] = useState(false)
+  const [closetError, setClosetError] = useState('')
+  const [isEquippingAccessory, setIsEquippingAccessory] = useState(false)
   const [modal, setModal] = useState<ModalName>(null)
   const [buddyName, setBuddyName] = useState('Buddy')
   const [draftBuddyName, setDraftBuddyName] = useState('Buddy')
   const [isEditingName, setIsEditingName] = useState(false)
   const [draftDuration, setDraftDuration] = useState({ hours: 0, minutes: 20 })
   const durationReturnTo = useRef<ModalName>(null)
+  const lastTimerStatus = useRef<TimerStatus>('ready')
+  const sessionCapture = useRef<{ id: string; startedAt: string } | null>(null)
   const finishOnboarding = useCallback((nextProfile: UserProfile, email: string) => {
     setProfile(nextProfile)
     setAuthEmail(email)
@@ -235,6 +282,80 @@ function App() {
       : isPaused
         ? 'PAUSED — TAKE YOUR TIME'
         : 'READY TO FOCUS'
+
+  useEffect(() => {
+    if (modal !== 'closet' || !profile) return
+    let active = true
+    setClosetLoading(true)
+    setClosetError('')
+
+    void Promise.all([
+      supabase
+        .from('accessories')
+        .select('id, name, description, is_active, slot, icon, unlock_sessions, sort_order')
+        .eq('is_active', true)
+        .order('sort_order'),
+      supabase
+        .from('user_accessories')
+        .select('accessory_id, unlocked_at, is_equipped')
+        .eq('user_id', profile.id),
+      supabase
+        .from('focus_sessions')
+        .select('id', { count: 'exact', head: true })
+        .eq('user_id', profile.id),
+    ]).then(([catalogResult, ownedResult, sessionsResult]) => {
+      if (!active) return
+      const queryError = catalogResult.error || ownedResult.error || sessionsResult.error
+      if (queryError) {
+        setClosetError(queryError.message)
+        return
+      }
+      const catalog = (catalogResult.data ?? []) as ClosetAccessory[]
+      const owned = (ownedResult.data ?? []) as OwnedAccessory[]
+      setClosetAccessories(catalog)
+      setOwnedAccessories(owned)
+      setCompletedSessionCount(sessionsResult.count ?? 0)
+      setSelectedAccessoryId((current) => current && catalog.some((item) => item.id === current) ? current : null)
+    }).catch((error: unknown) => {
+      if (active) setClosetError(error instanceof Error ? error.message : 'Could not load the closet.')
+    }).finally(() => {
+      if (active) setClosetLoading(false)
+    })
+
+    return () => { active = false }
+  }, [modal, profile?.id, timer.status, closetRefreshVersion])
+
+  useEffect(() => {
+    const previousStatus = lastTimerStatus.current
+    if (timer.status === 'running' && (previousStatus === 'ready' || previousStatus === 'complete')) {
+      sessionCapture.current = { id: crypto.randomUUID(), startedAt: new Date().toISOString() }
+    } else if (timer.status === 'ready' && previousStatus !== 'ready') {
+      sessionCapture.current = null
+    }
+
+    const completedCapture = timer.status === 'complete' && previousStatus === 'running'
+      ? sessionCapture.current
+      : null
+    if (completedCapture) sessionCapture.current = null
+    lastTimerStatus.current = timer.status
+
+    if (completedCapture && profile) {
+      void supabase.from('focus_sessions').insert({
+        id: completedCapture.id,
+        user_id: profile.id,
+        started_at: completedCapture.startedAt,
+        completed_at: new Date().toISOString(),
+        duration_minutes: timer.durationMinutes,
+      }).then(({ error }) => {
+        if (error) {
+          console.error('Could not save completed focus session:', error)
+          setProfileMessage(`Session completed, but its progress could not be saved: ${error.message}`)
+        } else {
+          setClosetRefreshVersion((version) => version + 1)
+        }
+      })
+    }
+  }, [timer.status, timer.durationMinutes, profile])
 
   const startOrResume = () => {
     void window.focusCompanion.startTimer()
@@ -317,6 +438,29 @@ function App() {
     setProfileMessage('')
   }
 
+  const ownedAccessoryIds = new Set(ownedAccessories.map((owned) => owned.accessory_id))
+  const earnedAccessories = closetAccessories.filter((accessory) => ownedAccessoryIds.has(accessory.id))
+  const equippedOwnedAccessory = ownedAccessories.find((owned) => owned.is_equipped)
+  const equippedAccessory = closetAccessories.find((accessory) => accessory.id === equippedOwnedAccessory?.accessory_id)
+  const selectedTryOnIndex = Math.max(0, earnedAccessories.findIndex((accessory) => accessory.id === selectedAccessoryId))
+  const selectedTryOnAccessory = earnedAccessories[selectedTryOnIndex]
+
+  const equipAccessory = async (accessoryId: string | null) => {
+    setIsEquippingAccessory(true)
+    setClosetError('')
+    const { error } = await supabase.rpc('set_equipped_accessory', { p_accessory_id: accessoryId })
+    if (error) {
+      setClosetError(error.message)
+    } else {
+      setOwnedAccessories((current) => current.map((owned) => ({
+        ...owned,
+        is_equipped: accessoryId !== null && owned.accessory_id === accessoryId,
+      })))
+      setProfileMessage(accessoryId ? 'Buddy is wearing that accessory.' : 'Accessory removed.')
+    }
+    setIsEquippingAccessory(false)
+  }
+
   if (!profile) {
     return <OnboardingFlow onComplete={finishOnboarding} />
   }
@@ -353,12 +497,18 @@ function App() {
           </p>
 
           <div className="scene-frame">
-            <BuddyScene look={buddyLook} />
+            <BuddyScene look={buddyLook} accessory={equippedAccessory} />
           </div>
 
           <div className="buddy-caption">
             <h2>{buddyName || 'Buddy'}</h2>
-            <p>{isComplete ? 'Lovely work — your buddy is proud of you!' : 'No accessories yet — finish a session to earn one'}</p>
+            <p>
+              {isComplete
+                ? 'Lovely work — your buddy is proud of you!'
+                : equippedAccessory
+                  ? `Wearing ${equippedAccessory.name} — complete sessions to earn more`
+                  : 'Finish a focus session to earn your first accessory'}
+            </p>
           </div>
 
           <div className="primary-actions">
@@ -383,15 +533,15 @@ function App() {
           </div>
           <div className="footer-actions">
             <button className="secondary-button" onClick={() => { setIsEditingName(false); setModal('settings') }}>Settings</button>
-            <button className="secondary-button" onClick={() => setModal('closet')}>Closet</button>
+            <button className="secondary-button" onClick={() => { setClosetPage('grid'); setModal('closet') }}>Closet</button>
           </div>
         </footer>
       </section>
 
       {modal && (
         <div className="modal-backdrop" onMouseDown={(event) => event.target === event.currentTarget && setModal(null)}>
-          <section className="modal-card" role="dialog" aria-modal="true" aria-labelledby="modal-title">
-            {modal !== 'duration' && (
+          <section className={`modal-card ${modal === 'closet' ? 'closet-modal' : ''}`} role="dialog" aria-modal="true" aria-labelledby="modal-title">
+            {modal === 'settings' && (
               <button className="modal-close" aria-label="Close dialog" onClick={() => setModal(null)}>×</button>
             )}
             {modal === 'duration' && (
@@ -494,12 +644,140 @@ function App() {
               </>
             )}
             {modal === 'closet' && (
-              <>
-                <p className="eyebrow">BUDDY’S CLOSET</p>
-                <h2 id="modal-title">A little something to earn</h2>
-                <p className="modal-description">Your closet is empty for now. Complete a focus session to earn your first accessory for Buddy.</p>
-                <div className="closet-preview" aria-hidden="true"><span>✦</span><span>♡</span><span>✿</span></div>
-              </>
+              <div className="closet-view">
+                <div className="closet-heading">
+                  <button
+                    className="closet-back-button"
+                    onClick={() => closetPage === 'try-on' ? setClosetPage('grid') : setModal(null)}
+                  >
+                    {closetPage === 'try-on' ? '‹ Closet' : '‹ Back'}
+                  </button>
+                  <h2 id="modal-title">{closetPage === 'try-on' ? 'Try on' : 'Closet'}</h2>
+                  <span className="closet-count">
+                    {closetPage === 'try-on' && earnedAccessories.length > 0
+                      ? `${selectedTryOnIndex + 1} of ${earnedAccessories.length}`
+                      : `${earnedAccessories.length} earned`}
+                  </span>
+                </div>
+
+                <div className="closet-buddy-card">
+                  <div className="closet-buddy-avatar">
+                    <BuddyAvatar look={buddyLook} className="closet-avatar" />
+                    {equippedAccessory && <span className="closet-worn-icon">{equippedAccessory.icon || '✦'}</span>}
+                  </div>
+                  <div className="closet-buddy-copy">
+                    <strong>{buddyName}</strong>
+                    <span>Wearing: {equippedAccessory?.name ?? 'nothing yet'}</span>
+                  </div>
+                </div>
+
+                {closetLoading && <p className="closet-feedback">Loading your closet…</p>}
+                {closetError && (
+                  <div className="closet-error" role="alert">
+                    <span>{closetError}</span>
+                    <button onClick={() => setClosetRefreshVersion((version) => version + 1)}>Retry</button>
+                  </div>
+                )}
+
+                {!closetLoading && !closetError && closetPage === 'grid' && (
+                  <>
+                    <p className="closet-section-label">ACCESSORIES</p>
+                    {closetAccessories.length > 0 ? (
+                      <div className="accessory-grid">
+                        {closetAccessories.map((accessory) => {
+                          const isOwned = ownedAccessoryIds.has(accessory.id)
+                          const isEquipped = equippedAccessory?.id === accessory.id
+                          const remainingSessions = Math.max(0, accessory.unlock_sessions - completedSessionCount)
+                          return (
+                            <button
+                              key={accessory.id}
+                              className={`accessory-tile ${isOwned ? 'earned' : 'locked'} ${isEquipped ? 'equipped' : ''}`}
+                              disabled={!isOwned}
+                              onClick={() => { setSelectedAccessoryId(accessory.id); setClosetPage('try-on') }}
+                              aria-label={`${accessory.name}, ${isEquipped ? 'wearing' : isOwned ? 'earned, try on' : `locked, ${remainingSessions} more sessions`}`}
+                            >
+                              <span className="accessory-tile-icon">{isOwned ? accessory.icon || '✦' : '🔒'}</span>
+                              <strong>{accessory.name}</strong>
+                              <span className="accessory-tile-status">
+                                {isEquipped ? '✓ Wearing' : isOwned ? 'Earned' : remainingSessions === 1 ? '1 more session' : `${remainingSessions} more sessions`}
+                              </span>
+                            </button>
+                          )
+                        })}
+                      </div>
+                    ) : (
+                      <div className="closet-empty-state">
+                        <div className="closet-empty-symbol" aria-hidden="true">✦</div>
+                        <h3>Your closet is empty</h3>
+                        <p>Accessories will show up here when they are added to the catalog.</p>
+                      </div>
+                    )}
+                    <button
+                      className="closet-primary-action"
+                      onClick={() => {
+                        if (earnedAccessories.length > 0) {
+                          setSelectedAccessoryId(equippedAccessory?.id ?? earnedAccessories[0]?.id ?? null)
+                          setClosetPage('try-on')
+                        } else {
+                          setModal(null)
+                          startOrResume()
+                        }
+                      }}
+                    >
+                      {earnedAccessories.length > 0 ? 'Browse & equip' : 'Start a session'}
+                    </button>
+                    {earnedAccessories.length === 0 && closetAccessories.length > 0 && (
+                      <p className="closet-empty-hint">Finish a focus session to earn your first accessory for Buddy.</p>
+                    )}
+                  </>
+                )}
+
+                {!closetLoading && !closetError && closetPage === 'try-on' && (
+                  selectedTryOnAccessory ? (
+                    <div className="closet-try-on">
+                      <div className="try-on-stage">
+                        <button
+                          className="try-on-arrow"
+                          aria-label="Previous accessory"
+                          disabled={earnedAccessories.length < 2}
+                          onClick={() => {
+                            const nextIndex = (selectedTryOnIndex - 1 + earnedAccessories.length) % earnedAccessories.length
+                            setSelectedAccessoryId(earnedAccessories[nextIndex]?.id ?? null)
+                          }}
+                        >‹</button>
+                        <div className="try-on-buddy">
+                          <BuddyAvatar look={buddyLook} className="try-on-avatar" />
+                          <span className="try-on-icon">{selectedTryOnAccessory.icon || '✦'}</span>
+                        </div>
+                        <button
+                          className="try-on-arrow"
+                          aria-label="Next accessory"
+                          disabled={earnedAccessories.length < 2}
+                          onClick={() => {
+                            const nextIndex = (selectedTryOnIndex + 1) % earnedAccessories.length
+                            setSelectedAccessoryId(earnedAccessories[nextIndex]?.id ?? null)
+                          }}
+                        >›</button>
+                      </div>
+                      <h3 className="try-on-name">{selectedTryOnAccessory.name}</h3>
+                      <p className="try-on-earned">{selectedTryOnAccessory.description || `Earned after ${selectedTryOnAccessory.unlock_sessions} focus session${selectedTryOnAccessory.unlock_sessions === 1 ? '' : 's'}`}</p>
+                      <div className="try-on-dots" aria-label={`${selectedTryOnIndex + 1} of ${earnedAccessories.length}`}>
+                        {earnedAccessories.map((accessory, index) => <span key={accessory.id} className={index === selectedTryOnIndex ? 'active' : ''} />)}
+                      </div>
+                      <button
+                        className="try-on-equip-button"
+                        disabled={isEquippingAccessory}
+                        onClick={() => void equipAccessory(equippedAccessory?.id === selectedTryOnAccessory.id ? null : selectedTryOnAccessory.id)}
+                      >
+                        {isEquippingAccessory ? 'Saving…' : equippedAccessory?.id === selectedTryOnAccessory.id ? '✓ Equipped — Remove' : 'Equip on Buddy'}
+                      </button>
+                      <button className="try-on-done" onClick={() => setModal(null)}>Done — back to studying</button>
+                    </div>
+                  ) : (
+                    <div className="closet-empty-state"><h3>Nothing to try on yet</h3><p>Complete a focus session to earn your first accessory.</p></div>
+                  )
+                )}
+              </div>
             )}
           </section>
         </div>

@@ -1,6 +1,8 @@
-import { useEffect, useRef, useState, type KeyboardEvent } from 'react'
+import { useCallback, useEffect, useRef, useState, type KeyboardEvent } from 'react'
 import { createRoot } from 'react-dom/client'
 import './index.css'
+import { supabase } from './utils/supabase'
+import { OnboardingFlow, type BuddyLook, type UserProfile } from './onboarding'
 
 type ModalName = 'duration' | 'settings' | 'closet' | null
 
@@ -149,7 +151,7 @@ function TimerPopup() {
   )
 }
 
-function BuddyScene() {
+function BuddyScene({ look }: { look: BuddyLook }) {
   return (
     <svg
       className="buddy-scene"
@@ -178,10 +180,18 @@ function BuddyScene() {
         <path d="M183 240v9m251-9v9" />
       </g>
       <g className="scene-buddy">
+        {look === 'cat' && <path d="m270 118 7-35 27 23m28 0 27-23 7 35" />}
+        {look === 'owl' && <path d="M274 119q3-25 18-22m56 0q15-3 18 22" />}
         <path d="M263 171c3-56 22-83 57-83s54 27 57 83z" />
-        <ellipse cx="300" cy="139" rx="5.5" ry="6.5" />
-        <ellipse cx="340" cy="139" rx="5.5" ry="6.5" />
-        <path d="M309 155q11 11 22 0" />
+        {look === 'owl' ? <>
+          <circle className="owl-eye-ring" cx="300" cy="139" r="11" />
+          <circle className="owl-eye-ring" cx="340" cy="139" r="11" />
+          <path className="owl-beak" d="m320 145 5 7h-10z" />
+        </> : <>
+          <ellipse cx="300" cy="139" rx="5.5" ry="6.5" />
+          <ellipse cx="340" cy="139" rx="5.5" ry="6.5" />
+          <path d="M309 155q11 11 22 0" />
+        </>}
       </g>
     </svg>
   )
@@ -194,12 +204,30 @@ function App() {
   const isRunning = timer.status === 'running'
   const isComplete = timer.status === 'complete'
   const isPaused = timer.status === 'paused'
+  const [profile, setProfile] = useState<UserProfile | null>(null)
+  const [authEmail, setAuthEmail] = useState('')
+  const [buddyLook, setBuddyLook] = useState<BuddyLook>('blob')
+  const [profileMessage, setProfileMessage] = useState('')
   const [modal, setModal] = useState<ModalName>(null)
   const [buddyName, setBuddyName] = useState('Buddy')
   const [draftBuddyName, setDraftBuddyName] = useState('Buddy')
   const [isEditingName, setIsEditingName] = useState(false)
   const [draftDuration, setDraftDuration] = useState({ hours: 0, minutes: 20 })
   const durationReturnTo = useRef<ModalName>(null)
+  const finishOnboarding = useCallback((nextProfile: UserProfile, email: string) => {
+    setProfile(nextProfile)
+    setAuthEmail(email)
+    setBuddyName(nextProfile.buddy_name)
+    setDraftBuddyName(nextProfile.buddy_name)
+    setBuddyLook(nextProfile.buddy_look)
+    setProfileMessage('')
+    void window.focusCompanion.getTimerState().then((current) => {
+      if (current.status === 'ready' && current.durationMinutes !== nextProfile.session_minutes) {
+        return window.focusCompanion.setTimerDuration(nextProfile.session_minutes)
+      }
+      return current
+    })
+  }, [])
   const status = isComplete
     ? 'SESSION COMPLETE'
     : isRunning
@@ -216,8 +244,20 @@ function App() {
     void window.focusCompanion.pauseTimer()
   }
 
-  const chooseDuration = (minutes: number) => {
+  const chooseDuration = async (minutes: number) => {
     void window.focusCompanion.setTimerDuration(minutes)
+    if (profile) {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ session_minutes: minutes, updated_at: new Date().toISOString() })
+        .eq('id', profile.id)
+      if (error) {
+        setProfileMessage(`Timer changed for this session, but could not save it to your account: ${error.message}`)
+      } else {
+        setProfile({ ...profile, session_minutes: minutes })
+        setProfileMessage('Session length saved to your account.')
+      }
+    }
     setModal(durationReturnTo.current)
     durationReturnTo.current = null
   }
@@ -246,10 +286,39 @@ function App() {
       startOrResume()
     }
   }
-
-  const saveName = () => {
+  const saveName = async () => {
     const trimmed = draftBuddyName.trim()
-    if (trimmed) { setBuddyName(trimmed); setIsEditingName(false) }
+    if (!trimmed) return
+    if (profile) {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ buddy_name: trimmed, updated_at: new Date().toISOString() })
+        .eq('id', profile.id)
+      if (error) {
+        setProfileMessage(`Could not save Buddy's name: ${error.message}`)
+        return
+      }
+      setProfile({ ...profile, buddy_name: trimmed })
+    }
+    setBuddyName(trimmed)
+    setProfileMessage(profile ? 'Buddy’s name saved to your account.' : '')
+    setIsEditingName(false)
+  }
+
+  const signOut = async () => {
+    const { error } = await supabase.auth.signOut()
+    if (error) {
+      setProfileMessage(`Could not sign out: ${error.message}`)
+      return
+    }
+    setProfile(null)
+    setAuthEmail('')
+    setModal(null)
+    setProfileMessage('')
+  }
+
+  if (!profile) {
+    return <OnboardingFlow onComplete={finishOnboarding} />
   }
 
   return (
@@ -284,7 +353,7 @@ function App() {
           </p>
 
           <div className="scene-frame">
-            <BuddyScene />
+            <BuddyScene look={buddyLook} />
           </div>
 
           <div className="buddy-caption">
@@ -366,6 +435,11 @@ function App() {
               <>
                 <p className="eyebrow">YOUR PREFERENCES</p>
                 <h2 id="modal-title">Settings</h2>
+                <div className="settings-account">
+                  <span className="settings-row-title">Signed in as</span>
+                  <span className="settings-row-value">{authEmail}</span>
+                  <span className="settings-row-value">Username: {profile.username}</span>
+                </div>
                 <div className="settings-row">
                   {isEditingName ? (
                     <>
@@ -413,6 +487,10 @@ function App() {
                   </div>
                 </div>
                 {isRunning && <p className="settings-running-note">Pause the timer to change session length.</p>}
+                {profileMessage && <p className="profile-message" role="status">{profileMessage}</p>}
+                <div className="settings-account-actions">
+                  <button className="text-button" onClick={() => { void signOut() }}>Sign out</button>
+                </div>
               </>
             )}
             {modal === 'closet' && (

@@ -19,5 +19,6 @@ interface Window {
     setTimerDuration: (minutes: number) => Promise<TimerSnapshot>
     resetTimer: () => Promise<TimerSnapshot>
     onTimerUpdate: (callback: (snapshot: TimerSnapshot) => void) => () => void
+    quitApp: () => Promise<void>
   }
 }

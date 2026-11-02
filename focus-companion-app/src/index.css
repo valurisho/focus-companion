@@ -39,6 +39,7 @@ button:focus-visible {
 }
 
 .timer-popup-screen {
+  position: relative;
   display: flex;
   width: 100vw;
   height: 100vh;
@@ -50,6 +51,28 @@ button:focus-visible {
   background: #fbfaf6;
   color: var(--ink);
   user-select: none;
+}
+
+.timer-popup-quit {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 18px;
+  height: 18px;
+  display: grid;
+  place-items: center;
+  border: none;
+  border-radius: 50%;
+  background: #f5c4c4;
+  color: #b85555;
+  font-size: 14px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0;
+}
+
+.timer-popup-quit:hover {
+  background: #ecaaaa;
 }
 
 .timer-popup-status {

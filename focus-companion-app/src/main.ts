@@ -2,7 +2,6 @@ import {
   app,
   BrowserWindow,
   ipcMain,
-  Menu,
   nativeImage,
   screen,
   Tray,
@@ -199,6 +198,11 @@ function registerTimerIpc() {
     if (!isTrustedRenderer(event)) throw new Error('Untrusted renderer requested timer reset.');
     return resetTimer();
   });
+
+  ipcMain.handle('app:quit', (event) => {
+    if (!isTrustedRenderer(event)) throw new Error('Untrusted renderer requested app quit.');
+    app.quit();
+  });
 }
 
 function loadRenderer(window: BrowserWindow, view?: string) {
@@ -349,11 +353,9 @@ function createTray() {
     diagnosticMode ? '' : formatTime(timerState.remainingSeconds),
     { fontType: 'monospacedDigit' },
   );
-  tray.setContextMenu(Menu.buildFromTemplate([
-    { label: "Quit Tomo's Nook", role: 'quit' },
-  ]));
   tray.setIgnoreDoubleClickEvents(true);
   tray.on('click', toggleTimerPopup);
+  tray.on('right-click', toggleTimerPopup);
 }
 
 registerTimerIpc();

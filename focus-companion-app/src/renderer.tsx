@@ -161,6 +161,9 @@ function TimerPopup() {
 
   return (
     <main className="timer-popup-screen" aria-label="Tomo's Nook timer">
+      <button className="timer-popup-quit" onClick={() => { void window.focusCompanion.quitApp() }} aria-label="Quit Tomo's Nook">
+        ×
+      </button>
       <span className={`timer-popup-status ${timer.status}`}>
         <span className="status-dot" />
         {statusLabel}

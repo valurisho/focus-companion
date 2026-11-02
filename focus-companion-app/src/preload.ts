@@ -14,4 +14,5 @@ contextBridge.exposeInMainWorld('focusCompanion', {
     ipcRenderer.on('timer:updated', listener);
     return () => ipcRenderer.removeListener('timer:updated', listener);
   },
+  quitApp: () => ipcRenderer.invoke('app:quit'),
 });

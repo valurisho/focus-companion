@@ -344,13 +344,13 @@ function createTray() {
   if (!diagnosticMode) icon.setTemplateImage(true);
 
   tray = new Tray(icon);
-  tray.setToolTip('Focus Companion timer');
+  tray.setToolTip("Tomo's Nook timer");
   tray.setTitle(
     diagnosticMode ? '' : formatTime(timerState.remainingSeconds),
     { fontType: 'monospacedDigit' },
   );
   tray.setContextMenu(Menu.buildFromTemplate([
-    { label: 'Quit Focus Companion', role: 'quit' },
+    { label: "Quit Tomo's Nook", role: 'quit' },
   ]));
   tray.setIgnoreDoubleClickEvents(true);
   tray.on('click', toggleTimerPopup);

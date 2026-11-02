@@ -153,9 +153,9 @@ button:focus-visible {
 
 .buddy-status {
   gap: 8px;
-  color: var(--muted);
-  font-size: 12px;
-  font-weight: 600;
+  color: #4e524d;
+  font-size: 13px;
+  font-weight: 650;
 }
 
 .buddy-status span,

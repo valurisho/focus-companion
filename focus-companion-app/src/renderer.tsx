@@ -160,7 +160,7 @@ function TimerPopup() {
           : 'FOCUS TIMER'
 
   return (
-    <main className="timer-popup-screen" aria-label="Focus Companion timer">
+    <main className="timer-popup-screen" aria-label="Tomo's Nook timer">
       <span className={`timer-popup-status ${timer.status}`}>
         <span className="status-dot" />
         {statusLabel}
@@ -428,7 +428,7 @@ function App() {
       setProfile({ ...profile, buddy_name: trimmed })
     }
     setBuddyName(trimmed)
-    setProfileMessage(profile ? 'Buddy’s name saved to your account.' : '')
+    setProfileMessage(profile ? `${trimmed}’s name saved to your account.` : "")
     setIsEditingName(false)
   }
 
@@ -473,13 +473,13 @@ function App() {
 
   return (
     <main className="app-shell">
-      <section className="study-window" aria-label="Focus Companion study screen">
+      <section className="study-window" aria-label="Tomo's Nook study screen">
         <header className="top-bar">
           <div className="brand-lockup">
             <span className="brand-mark" aria-hidden="true">✦</span>
             <div>
               <p className="eyebrow">YOUR STUDY SPACE</p>
-              <h1>Study Buddy</h1>
+              <h1>Tomo's Nook</h1>
             </div>
           </div>
           <span className="buddy-status"><span /> {buddyName || 'Buddy'} is here</span>

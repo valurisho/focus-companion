@@ -351,7 +351,7 @@ export function OnboardingFlow({
                 <BuddyAvatar look={buddyLook} className="onboarding-avatar" />
               </div>
               <p className="eyebrow">A LITTLE COMPANION FOR YOUR FOCUS</p>
-              <h1>Study Buddy</h1>
+              <h1>Tomo's Nook</h1>
               <p className="onboarding-copy">
                 Stay focused, finish sessions, and help your buddy grow along
                 the way.

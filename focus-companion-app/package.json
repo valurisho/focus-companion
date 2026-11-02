@@ -1,6 +1,6 @@
 {
   "name": "focus-companion",
-  "productName": "Focus Companion",
+  "productName": "Tomo's Nook",
   "version": "1.0.0",
   "description": "A friendly Pomodoro timer and study companion for macOS.",
   "main": ".vite/build/main.js",

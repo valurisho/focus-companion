@@ -157,7 +157,7 @@ function TimerPopup() {
         ? 'PAUSED'
         : timer.status === 'complete'
           ? 'SESSION COMPLETE'
-          : 'FOCUS TIMER'
+          : "TOMO'S NOOK"
 
   return (
     <main className="timer-popup-screen" aria-label="Tomo's Nook timer">

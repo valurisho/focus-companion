@@ -1,4 +1,4 @@
-# Focus Companion
+# Tomo's Nook
 
 A macOS desktop application that combines a Pomodoro timer with an interactive floating study companion to help students stay focused.
 

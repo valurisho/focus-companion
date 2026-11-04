@@ -252,6 +252,7 @@ function App() {
   const isPaused = timer.status === 'paused'
   const isBreak = timer.mode === 'break'
   const isTimedSession = isRunning || isPaused || isComplete
+  const hasValidDuration = sessionMinutes >= 5
   const [profile, setProfile] = useState<UserProfile | null>(null)
   const [authEmail, setAuthEmail] = useState('')
   const [buddyLook, setBuddyLook] = useState<BuddyLook>('blob')
@@ -568,6 +569,31 @@ function App() {
                     Reset session
                   </button>
                 )}
+              </div>
+            </>
+          ) : !hasValidDuration ? (
+            <>
+              <div className="session-status">
+                <span className="status-dot" />
+                NO SESSION SET
+              </div>
+              <div className="timer" aria-label="No session duration set">
+                --:--
+              </div>
+              <p className="session-detail">
+                Choose a session length to get started
+              </p>
+              <div className="scene-frame">
+                <BuddyScene look={buddyLook} accessory={equippedAccessory} />
+              </div>
+              <div className="buddy-caption">
+                <h2>{buddyName || 'Buddy'}</h2>
+                <p>Set a focus duration to begin.</p>
+              </div>
+              <div className="primary-actions">
+                <button className="start-button" onClick={() => openDurationPicker()}>
+                  Choose session length
+                </button>
               </div>
             </>
           ) : (

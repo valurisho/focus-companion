@@ -15,6 +15,7 @@ if (started) {
 }
 
 const initialDurationMinutes = 20;
+let focusDurationMinutes = initialDurationMinutes;
 const timerPopupSize = { width: 220, height: 104 };
 const trayDiagnosticMode = true;
 
@@ -109,6 +110,7 @@ function setTimerDuration(minutes: number): TimerSnapshot {
     throw new Error('Timer duration must be between 5 and 295 whole minutes.');
   }
 
+  focusDurationMinutes = minutes;
   timerEndsAt = null;
   timerState = {
     status: 'ready',
@@ -124,6 +126,7 @@ function startFocusTimer(minutes: number): TimerSnapshot {
     throw new Error('Timer duration must be between 5 and 295 whole minutes.');
   }
 
+  focusDurationMinutes = minutes;
   timerState = {
     status: 'running',
     mode: 'focus',
@@ -152,9 +155,9 @@ function resetTimer(): TimerSnapshot {
   timerEndsAt = null;
   timerState = {
     status: 'ready',
-    mode: timerState.mode,
-    durationMinutes: timerState.durationMinutes,
-    remainingSeconds: timerState.durationMinutes * 60,
+    mode: 'focus',
+    durationMinutes: focusDurationMinutes,
+    remainingSeconds: focusDurationMinutes * 60,
   };
   return publishTimerState();
 }

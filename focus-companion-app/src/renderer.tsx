@@ -248,7 +248,7 @@ function App() {
   const isComplete = timer.status === 'complete'
   const isPaused = timer.status === 'paused'
   const isBreak = timer.mode === 'break'
-  const isTimedSession = isRunning || isPaused || isComplete || isBreak
+  const isTimedSession = isRunning || isPaused || isComplete
   const [profile, setProfile] = useState<UserProfile | null>(null)
   const [authEmail, setAuthEmail] = useState('')
   const [buddyLook, setBuddyLook] = useState<BuddyLook>('blob')
@@ -514,6 +514,9 @@ function App() {
                     </button>
                     <button className="extend-button" onClick={() => { void window.focusCompanion.startFocusTimer(20) }}>
                       Extend 20 Minutes
+                    </button>
+                    <button className="extend-button" onClick={() => { void window.focusCompanion.setTimerDuration(profile.session_minutes) }}>
+                      Skip break
                     </button>
                   </>
                 )}

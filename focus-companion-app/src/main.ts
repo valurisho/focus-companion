@@ -16,7 +16,7 @@ if (started) {
 
 const initialDurationMinutes = 20;
 let focusDurationMinutes = initialDurationMinutes;
-const timerPopupSize = { width: 220, height: 104 };
+const timerPopupSize = { width: 220, height: 120 };
 const trayDiagnosticMode = true;
 
 let mainWindow: BrowserWindow | null = null;
@@ -205,6 +205,12 @@ function registerTimerIpc() {
   ipcMain.handle('app:quit', (event) => {
     if (!isTrustedRenderer(event)) throw new Error('Untrusted renderer requested app quit.');
     app.quit();
+  });
+
+  ipcMain.handle('popup:hide', (event) => {
+    if (!isTrustedRenderer(event)) throw new Error('Untrusted renderer requested popup hide.');
+    timerPopupWantedVisible = false;
+    timerPopup?.hide();
   });
 }
 

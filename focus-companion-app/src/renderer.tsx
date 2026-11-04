@@ -161,7 +161,7 @@ function TimerPopup() {
 
   return (
     <main className="timer-popup-screen" aria-label="Tomo's Nook timer">
-      <button className="timer-popup-quit" onClick={() => { void window.focusCompanion.quitApp() }} aria-label="Quit Tomo's Nook">
+      <button className="timer-popup-quit" onClick={() => { void window.focusCompanion.hidePopup() }} aria-label="Close timer popup">
         ×
       </button>
       <span className={`timer-popup-status ${timer.status}`}>
@@ -171,6 +171,9 @@ function TimerPopup() {
       <div className="timer-popup-time" role="timer" aria-label={`${formatTime(timer.remainingSeconds)} remaining`}>
         {formatTime(timer.remainingSeconds)}
       </div>
+      <button className="timer-popup-quit-app" onClick={() => { void window.focusCompanion.quitApp() }}>
+        Quit Tomo's Nook
+      </button>
     </main>
   )
 }

@@ -96,6 +96,64 @@ button:focus-visible {
   background: #f0ede8;
 }
 
+.popup-confetti {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  border-radius: 13px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.popup-confetti-piece {
+  position: absolute;
+  top: -8px;
+  width: 5px;
+  height: 8px;
+  border-radius: 2px;
+  opacity: 0;
+  animation: popup-confetti-fall 1.3s ease-in forwards;
+}
+
+@keyframes popup-confetti-fall {
+  0% { opacity: 0.95; transform: translateY(0) rotate(0deg); }
+  80% { opacity: 0.5; }
+  100% { opacity: 0; transform: translateY(160px) rotate(360deg); }
+}
+
+.timer-popup-celebration-title {
+  margin: 3px 0 1px;
+  color: #8c6a32;
+  font-size: 18px;
+  font-weight: 850;
+  letter-spacing: -.025em;
+}
+
+.timer-popup-celebration-copy {
+  margin: 0 0 7px;
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.timer-popup-open-app {
+  min-height: 28px;
+  padding: 0 14px;
+  border: 1.5px solid #343734;
+  border-radius: 20px;
+  background: #343734;
+  color: #fffefa;
+  cursor: pointer;
+  font-size: 10px;
+  font-weight: 750;
+  letter-spacing: .02em;
+  transition: background .15s ease;
+}
+
+.timer-popup-open-app:hover {
+  background: #4a4f4a;
+}
+
 .timer-popup-status {
   display: inline-flex;
   align-items: center;

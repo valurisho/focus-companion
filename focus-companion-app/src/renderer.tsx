@@ -147,8 +147,54 @@ function useTimerSnapshot() {
   return snapshot
 }
 
+const CONFETTI_COLORS = ['#84a187', '#d88e73', '#d4a54f', '#708472', '#fffefa', '#f5e4d9', '#c9a56e']
+
+function Confetti() {
+  const [alive, setAlive] = useState(true)
+
+  useEffect(() => {
+    const t = window.setTimeout(() => setAlive(false), 1400)
+    return () => window.clearTimeout(t)
+  }, [])
+
+  if (!alive) return null
+
+  return (
+    <div className="popup-confetti" aria-hidden="true">
+      {Array.from({ length: 14 }, (_, i) => (
+        <span
+          key={i}
+          className="popup-confetti-piece"
+          style={{
+            left: `${8 + (i * 61 + 17) % 84}%`,
+            animationDelay: `${(i * 97) % 350}ms`,
+            background: CONFETTI_COLORS[i % CONFETTI_COLORS.length],
+          }}
+        />
+      ))}
+    </div>
+  )
+}
+
 function TimerPopup() {
   const timer = useTimerSnapshot()
+  const [confettiKey, setConfettiKey] = useState(0)
+  const [showConfetti, setShowConfetti] = useState(false)
+
+  useEffect(() => {
+    const unsubscribe = window.focusCompanion.onCelebration(() => {
+      setConfettiKey((k) => k + 1)
+      setShowConfetti(true)
+    })
+    return unsubscribe
+  }, [])
+
+  useEffect(() => {
+    if (timer.status !== 'complete') setShowConfetti(false)
+  }, [timer.status])
+
+  const isFocusComplete = timer.mode === 'focus' && timer.status === 'complete'
+
   const statusLabel = timer.mode === 'break'
     ? timer.status === 'complete' ? 'BREAK COMPLETE' : timer.status === 'paused' ? 'BREAK PAUSED' : 'BREAK TIME'
     : timer.status === 'running'
@@ -161,19 +207,36 @@ function TimerPopup() {
 
   return (
     <main className="timer-popup-screen" aria-label="Tomo's Nook timer">
+      {showConfetti && <Confetti key={confettiKey} />}
       <button className="timer-popup-quit" onClick={() => { void window.focusCompanion.hidePopup() }} aria-label="Close timer popup">
         ×
       </button>
-      <span className={`timer-popup-status ${timer.status}`}>
-        <span className="status-dot" />
-        {statusLabel}
-      </span>
-      <div className="timer-popup-time" role="timer" aria-label={`${formatTime(timer.remainingSeconds)} remaining`}>
-        {formatTime(timer.remainingSeconds)}
-      </div>
-      <button className="timer-popup-quit-app" onClick={() => { void window.focusCompanion.quitApp() }}>
-        Quit Tomo's Nook
-      </button>
+      {isFocusComplete ? (
+        <>
+          <span className="timer-popup-status complete">
+            <span className="status-dot" />
+            {statusLabel}
+          </span>
+          <p className="timer-popup-celebration-title">Nice work!</p>
+          <p className="timer-popup-celebration-copy">Focus session complete</p>
+          <button className="timer-popup-open-app" onClick={() => { void window.focusCompanion.showMainWindow() }}>
+            Open Tomo's Nook
+          </button>
+        </>
+      ) : (
+        <>
+          <span className={`timer-popup-status ${timer.status}`}>
+            <span className="status-dot" />
+            {statusLabel}
+          </span>
+          <div className="timer-popup-time" role="timer" aria-label={`${formatTime(timer.remainingSeconds)} remaining`}>
+            {formatTime(timer.remainingSeconds)}
+          </div>
+          <button className="timer-popup-quit-app" onClick={() => { void window.focusCompanion.quitApp() }}>
+            Quit Tomo's Nook
+          </button>
+        </>
+      )}
     </main>
   )
 }

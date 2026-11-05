@@ -21,5 +21,7 @@ interface Window {
     onTimerUpdate: (callback: (snapshot: TimerSnapshot) => void) => () => void
     quitApp: () => Promise<void>
     hidePopup: () => Promise<void>
+    showMainWindow: () => Promise<void>
+    onCelebration: (callback: () => void) => () => void
   }
 }

@@ -16,4 +16,10 @@ contextBridge.exposeInMainWorld('focusCompanion', {
   },
   quitApp: () => ipcRenderer.invoke('app:quit'),
   hidePopup: () => ipcRenderer.invoke('popup:hide'),
+  showMainWindow: () => ipcRenderer.invoke('app:show-main'),
+  onCelebration: (callback: () => void) => {
+    const listener = () => callback();
+    ipcRenderer.on('celebration:start', listener);
+    return () => ipcRenderer.removeListener('celebration:start', listener);
+  },
 });

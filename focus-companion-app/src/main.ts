@@ -16,7 +16,7 @@ if (started) {
 
 const initialDurationMinutes = 20;
 let focusDurationMinutes = initialDurationMinutes;
-const timerPopupSize = { width: 220, height: 120 };
+const timerPopupSize = { width: 220, height: 140 };
 const trayDiagnosticMode = true;
 
 let mainWindow: BrowserWindow | null = null;
@@ -24,6 +24,8 @@ let timerPopup: BrowserWindow | null = null;
 let tray: Tray | null = null;
 let timerPopupReady = false;
 let timerPopupWantedVisible = false;
+let showPopupInactive = false;
+let pendingCelebration = false;
 let timerEndsAt: number | null = null;
 let timerInterval: ReturnType<typeof setInterval> | null = null;
 let timerState: TimerSnapshot = {
@@ -57,6 +59,7 @@ function getTimerSnapshot(): TimerSnapshot {
 }
 
 function publishTimerState(): TimerSnapshot {
+  const previousStatus = timerState.status;
   const snapshot = getTimerSnapshot();
   tray?.setTitle(
     trayDiagnosticMode ? '' : formatTime(snapshot.remainingSeconds),
@@ -72,6 +75,10 @@ function publishTimerState(): TimerSnapshot {
   if (snapshot.status !== 'running' && timerInterval !== null) {
     clearInterval(timerInterval);
     timerInterval = null;
+  }
+
+  if (snapshot.mode === 'focus' && snapshot.status === 'complete' && previousStatus === 'running') {
+    autoshowCelebration();
   }
 
   return snapshot;
@@ -212,6 +219,13 @@ function registerTimerIpc() {
     timerPopupWantedVisible = false;
     timerPopup?.hide();
   });
+
+  ipcMain.handle('app:show-main', (event) => {
+    if (!isTrustedRenderer(event)) throw new Error('Untrusted renderer requested main window.');
+    timerPopupWantedVisible = false;
+    timerPopup?.hide();
+    createMainWindow();
+  });
 }
 
 function loadRenderer(window: BrowserWindow, view?: string) {
@@ -287,6 +301,23 @@ function positionTimerPopup() {
   timerPopup.setPosition(x, y, false);
 }
 
+function autoshowCelebration() {
+  timerPopupWantedVisible = true;
+  showPopupInactive = true;
+  pendingCelebration = true;
+  const popup = timerPopup && !timerPopup.isDestroyed() ? timerPopup : createTimerPopup();
+  positionTimerPopup();
+  if (timerPopupReady) {
+    popup.showInactive();
+    popup.webContents.send('celebration:start');
+    showPopupInactive = false;
+    pendingCelebration = false;
+  }
+  if (process.platform === 'darwin' && app.dock) {
+    app.dock.bounce('informational');
+  }
+}
+
 function createTimerPopup() {
   const popup = new BrowserWindow({
     width: timerPopupSize.width,
@@ -314,8 +345,22 @@ function createTimerPopup() {
     timerPopupReady = true;
     if (timerPopupWantedVisible) {
       positionTimerPopup();
-      popup.show();
+      if (showPopupInactive) {
+        popup.showInactive();
+        showPopupInactive = false;
+      } else {
+        popup.show();
+      }
       publishTimerState();
+      if (pendingCelebration) {
+        const popupRef = popup;
+        setTimeout(() => {
+          if (!popupRef.isDestroyed()) {
+            popupRef.webContents.send('celebration:start');
+          }
+          pendingCelebration = false;
+        }, 200);
+      }
     }
   });
   popup.on('blur', () => {

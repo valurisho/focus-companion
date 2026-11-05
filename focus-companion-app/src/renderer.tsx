@@ -267,8 +267,8 @@ function App() {
   const [closetError, setClosetError] = useState('')
   const [isEquippingAccessory, setIsEquippingAccessory] = useState(false)
   const [modal, setModal] = useState<ModalName>(null)
-  const [buddyName, setBuddyName] = useState('Buddy')
-  const [draftBuddyName, setDraftBuddyName] = useState('Buddy')
+  const [buddyName, setBuddyName] = useState('Tomo')
+  const [draftBuddyName, setDraftBuddyName] = useState('Tomo')
   const [isEditingName, setIsEditingName] = useState(false)
   const [draftDuration, setDraftDuration] = useState({ hours: 0, minutes: 20 })
   const durationReturnTo = useRef<ModalName>(null)
@@ -429,7 +429,7 @@ function App() {
         .update({ buddy_name: trimmed, updated_at: new Date().toISOString() })
         .eq('id', profile.id)
       if (error) {
-        setProfileMessage(`Could not save Buddy's name: ${error.message}`)
+        setProfileMessage(`Could not save buddy's name: ${error.message}`)
         return
       }
       setProfile({ ...profile, buddy_name: trimmed })
@@ -469,7 +469,7 @@ function App() {
         ...owned,
         is_equipped: accessoryId !== null && owned.accessory_id === accessoryId,
       })))
-      setProfileMessage(accessoryId ? 'Buddy is wearing that accessory.' : 'Accessory removed.')
+      setProfileMessage(accessoryId ? `${buddyName} is wearing that accessory.` : 'Accessory removed.')
     }
     setIsEquippingAccessory(false)
   }
@@ -489,7 +489,7 @@ function App() {
               <h1>Tomo's Nook</h1>
             </div>
           </div>
-          <span className="buddy-status"><span /> {buddyName || 'Buddy'} is here</span>
+          <span className="buddy-status"><span /> {buddyName || 'Tomo'} is here</span>
         </header>
 
         <section className={`focus-content ${isTimedSession ? 'session-mode-content' : ''}`} aria-label="Focus timer and companion">
@@ -557,7 +557,7 @@ function App() {
                     ? 'Take a few minutes away from your desk.'
                     : isPaused
                       ? `Paused at ${formatTime(secondsLeft)}. Continue whenever you are ready.`
-                      : `${buddyName || 'Buddy'} is reading with you.`}
+                      : `${buddyName || 'Tomo'} is reading with you.`}
                 </p>
               </div>
               <div className="primary-actions timer-actions">
@@ -587,7 +587,7 @@ function App() {
                 <BuddyScene look={buddyLook} accessory={equippedAccessory} />
               </div>
               <div className="buddy-caption">
-                <h2>{buddyName || 'Buddy'}</h2>
+                <h2>{buddyName || 'Tomo'}</h2>
                 <p>Set a focus duration to begin.</p>
               </div>
               <div className="primary-actions">
@@ -616,7 +616,7 @@ function App() {
                 <BuddyScene look={buddyLook} accessory={equippedAccessory} />
               </div>
               <div className="buddy-caption">
-                <h2>{buddyName || 'Buddy'}</h2>
+                <h2>{buddyName || 'Tomo'}</h2>
                 <p>
                   {equippedAccessory
                     ? `Wearing ${equippedAccessory.name} — complete sessions to earn more`
@@ -836,7 +836,7 @@ function App() {
                       {earnedAccessories.length > 0 ? 'Browse & equip' : 'Start a session'}
                     </button>
                     {earnedAccessories.length === 0 && closetAccessories.length > 0 && (
-                      <p className="closet-empty-hint">Finish a focus session to earn your first accessory for Buddy.</p>
+                      <p className="closet-empty-hint">Finish a focus session to earn your first accessory for {buddyName || 'Tomo'}.</p>
                     )}
                   </>
                 )}
@@ -878,7 +878,7 @@ function App() {
                         disabled={isEquippingAccessory}
                         onClick={() => void equipAccessory(equippedAccessory?.id === selectedTryOnAccessory.id ? null : selectedTryOnAccessory.id)}
                       >
-                        {isEquippingAccessory ? 'Saving…' : equippedAccessory?.id === selectedTryOnAccessory.id ? '✓ Equipped — Remove' : 'Equip on Buddy'}
+                        {isEquippingAccessory ? 'Saving…' : equippedAccessory?.id === selectedTryOnAccessory.id ? '✓ Equipped — Remove' : `Equip on ${buddyName || 'Tomo'}`}
                       </button>
                       <button className="try-on-done" onClick={() => setModal(null)}>Done — back to studying</button>
                     </div>

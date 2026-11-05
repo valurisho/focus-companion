@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState, type FormEvent } from "react";
+import { useCallback, useEffect, useRef, useState, type FormEvent, type KeyboardEvent } from "react";
 import type { User } from "@supabase/supabase-js";
 import { supabase } from "./utils/supabase";
 
@@ -66,7 +66,7 @@ async function getOrCreateProfile(user: User): Promise<UserProfile> {
     .from("profiles")
     .insert({
       id: user.id,
-      buddy_name: requestedName.slice(0, 20) || "Buddy",
+      buddy_name: requestedName.slice(0, 20) || "Tomo",
       buddy_look: look,
       session_minutes: 20,
     })
@@ -75,6 +75,108 @@ async function getOrCreateProfile(user: User): Promise<UserProfile> {
 
   if (createError) throw createError;
   return created as UserProfile;
+}
+
+const sessionHourOptions = [0, 1, 2, 3, 4];
+const sessionMinuteOptions = Array.from({ length: 12 }, (_, i) => i * 5);
+const wheelRowHeight = 48;
+
+function WheelColumn({
+  label,
+  unit,
+  values,
+  value,
+  onChange,
+}: {
+  label: string;
+  unit: string;
+  values: number[];
+  value: number;
+  onChange: (value: number) => void;
+}) {
+  const wheelRef = useRef<HTMLDivElement>(null);
+  const settleTimeout = useRef<number | null>(null);
+
+  useEffect(() => {
+    const wheel = wheelRef.current;
+    if (!wheel) return;
+    wheel.scrollTop = values.indexOf(value) * wheelRowHeight;
+  }, []);
+
+  useEffect(
+    () => () => {
+      if (settleTimeout.current !== null)
+        window.clearTimeout(settleTimeout.current);
+    },
+    [],
+  );
+
+  const selectValue = (index: number) => {
+    const safeIndex = Math.max(0, Math.min(values.length - 1, index));
+    onChange(values[safeIndex]);
+    wheelRef.current?.scrollTo({
+      top: safeIndex * wheelRowHeight,
+      behavior: "smooth",
+    });
+  };
+
+  const settleScroll = () => {
+    if (settleTimeout.current !== null)
+      window.clearTimeout(settleTimeout.current);
+    settleTimeout.current = window.setTimeout(() => {
+      const wheel = wheelRef.current;
+      if (!wheel) return;
+      const index = Math.max(
+        0,
+        Math.min(
+          values.length - 1,
+          Math.round(wheel.scrollTop / wheelRowHeight),
+        ),
+      );
+      onChange(values[index]);
+    }, 90);
+  };
+
+  const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
+    if (event.key !== "ArrowUp" && event.key !== "ArrowDown") return;
+    event.preventDefault();
+    selectValue(
+      values.indexOf(value) + (event.key === "ArrowDown" ? 1 : -1),
+    );
+  };
+
+  return (
+    <div
+      className={`wheel-column ${unit === "hr" ? "hours-column" : "minutes-column"}`}
+    >
+      <div
+        ref={wheelRef}
+        className="wheel-viewport"
+        role="listbox"
+        aria-label={label}
+        tabIndex={0}
+        onScroll={settleScroll}
+        onKeyDown={handleKeyDown}
+      >
+        {values.map((option, index) => (
+          <button
+            className={`wheel-option ${option === value ? "selected" : ""}`}
+            key={option}
+            type="button"
+            role="option"
+            aria-selected={option === value}
+            tabIndex={-1}
+            onClick={() => selectValue(index)}
+          >
+            {String(option).padStart(2, "0")}
+          </button>
+        ))}
+      </div>
+      <span className="wheel-unit" aria-hidden="true">
+        {unit}
+      </span>
+    </div>
+  );
 }
 
 function formatDuration(minutes: number) {
@@ -141,10 +243,12 @@ export function OnboardingFlow({
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [buddyName, setBuddyName] = useState("Buddy");
+  const [buddyName, setBuddyName] = useState("Tomo");
   const [buddyLook, setBuddyLook] = useState<BuddyLook>("blob");
   const [username, setUsername] = useState("");
   const [sessionMinutes, setSessionMinutes] = useState(20);
+  const [draftSessionHours, setDraftSessionHours] = useState(0);
+  const [draftSessionMins, setDraftSessionMins] = useState(20);
   const [userId, setUserId] = useState<string | null>(null);
   const [accountEmail, setAccountEmail] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -160,6 +264,8 @@ export function OnboardingFlow({
       setBuddyLook(profile.buddy_look);
       setUsername(profile.username ?? "");
       setSessionMinutes(profile.session_minutes);
+      setDraftSessionHours(Math.floor(profile.session_minutes / 60));
+      setDraftSessionMins(profile.session_minutes % 60);
       if (profile.username) {
         onComplete(profile, user.email ?? "");
       } else {
@@ -227,7 +333,7 @@ export function OnboardingFlow({
           password,
           options: {
             data: {
-              buddy_name: buddyName.trim() || "Buddy",
+              buddy_name: buddyName.trim() || "Tomo",
               buddy_look: buddyLook,
             },
           },
@@ -280,11 +386,10 @@ export function OnboardingFlow({
       );
       return;
     }
-    if (!trimmedBuddyName || trimmedBuddyName.length > 20) {
-      setErrorMessage("Buddy name must be between 1 and 20 characters.");
+    if (sessionMinutes < 5) {
+      setErrorMessage("Session length must be at least 5 minutes.");
       return;
     }
-
     setIsSubmitting(true);
     try {
       const { error } = await supabase
@@ -333,7 +438,7 @@ export function OnboardingFlow({
     <main className="app-shell onboarding-shell">
       <section
         className="study-window onboarding-window"
-        aria-label="Study Buddy setup"
+        aria-label="Tomo's Nook setup"
       >
         <header className="onboarding-window-bar">
           <span className="window-dots" aria-hidden="true">
@@ -341,7 +446,7 @@ export function OnboardingFlow({
             <i />
             <i />
           </span>
-          <span>Study Buddy — Set up</span>
+          <span>Tomo's Nook</span>
         </header>
 
         <div className="onboarding-content">
@@ -413,9 +518,7 @@ export function OnboardingFlow({
                   >
                     <BuddyAvatar look={look} className="look-avatar" />
                     <span>
-                      {look === "blob"
-                        ? "Buddy"
-                        : look[0].toUpperCase() + look.slice(1)}
+                      {look[0].toUpperCase() + look.slice(1)}
                     </span>
                   </button>
                 ))}
@@ -435,10 +538,16 @@ export function OnboardingFlow({
               <p className="field-hint">
                 You can change this later in Settings.
               </p>
-              <div className="buddy-name-preview">
-                <span>How it shows on the timer</span>
-                <strong>{buddyName.trim() || "Buddy"}</strong>
-              </div>
+              {!buddyName.trim() ? (
+                <p className="form-message error" role="alert">
+                  Please enter a name for your buddy.
+                </p>
+              ) : (
+                <div className="buddy-name-preview">
+                  <span>How it shows on the timer</span>
+                  <strong>{buddyName.trim()}</strong>
+                </div>
+              )}
 
               <div className="onboarding-actions">
                 <button
@@ -449,6 +558,7 @@ export function OnboardingFlow({
                 </button>
                 <button
                   className="onboarding-primary compact"
+                  disabled={!buddyName.trim()}
                   onClick={() => {
                     setErrorMessage("");
                     setPage("auth");
@@ -592,26 +702,34 @@ export function OnboardingFlow({
               <form className="onboarding-form" onSubmit={saveProfile}>
                 <div className="onboarding-settings-group">
                   <p className="settings-group-title">STUDY TIMER</p>
-                  <div className="onboarding-setting-row">
-                    <label htmlFor="session-length">Session length</label>
-                    <select
-                      id="session-length"
-                      className="onboarding-select"
-                      value={sessionMinutes}
-                      onChange={(event) =>
-                        setSessionMinutes(Number(event.target.value))
-                      }
-                    >
-                      {Array.from(
-                        { length: 59 },
-                        (_, index) => (index + 1) * 5,
-                      ).map((minutes) => (
-                        <option key={minutes} value={minutes}>
-                          {formatDuration(minutes)}
-                        </option>
-                      ))}
-                    </select>
+                  <label className="onboarding-label">Session length</label>
+                  <div className="time-wheel">
+                    <WheelColumn
+                      label="Hours"
+                      unit="hr"
+                      values={sessionHourOptions}
+                      value={draftSessionHours}
+                      onChange={(h) => {
+                        setDraftSessionHours(h);
+                        setSessionMinutes(h * 60 + draftSessionMins);
+                      }}
+                    />
+                    <WheelColumn
+                      label="Minutes"
+                      unit="min"
+                      values={sessionMinuteOptions}
+                      value={draftSessionMins}
+                      onChange={(m) => {
+                        setDraftSessionMins(m);
+                        setSessionMinutes(draftSessionHours * 60 + m);
+                      }}
+                    />
                   </div>
+                  {sessionMinutes < 5 && (
+                    <p className="form-message error" role="alert">
+                      Session must be at least 5 minutes.
+                    </p>
+                  )}
                 </div>
 
                 <div className="onboarding-settings-group">
@@ -638,21 +756,6 @@ export function OnboardingFlow({
                   <p className="field-hint">
                     Letters, numbers, and underscores; 3–20 characters.
                   </p>
-                  <label
-                    className="onboarding-label"
-                    htmlFor="settings-buddy-name"
-                  >
-                    Study buddy name
-                  </label>
-                  <input
-                    id="settings-buddy-name"
-                    className="onboarding-input"
-                    value={buddyName}
-                    onChange={(event) => setBuddyName(event.target.value)}
-                    maxLength={20}
-                    required
-                    autoComplete="off"
-                  />
                 </div>
 
                 {errorMessage && (
@@ -666,7 +769,7 @@ export function OnboardingFlow({
                     type="button"
                     onClick={() => {
                       setErrorMessage("");
-                      setPage("auth");
+                      setPage("buddy");
                     }}
                   >
                     Back

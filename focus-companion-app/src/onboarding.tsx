@@ -444,11 +444,6 @@ export function OnboardingFlow({
         aria-label="Tomo's Nook setup"
       >
         <header className="onboarding-window-bar">
-          <span className="window-dots" aria-hidden="true">
-            <i />
-            <i />
-            <i />
-          </span>
           <span>Tomo's Nook</span>
         </header>
 

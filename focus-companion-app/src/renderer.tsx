@@ -469,7 +469,7 @@ function App() {
   }, [])
 
   useEffect(() => {
-    if (modal !== 'closet' || !profile) return
+    if (!profile) return
     let active = true
     setClosetLoading(true)
     setClosetError('')
@@ -508,7 +508,7 @@ function App() {
     })
 
     return () => { active = false }
-  }, [modal, profile?.id, timer.status, closetRefreshVersion])
+  }, [profile?.id, closetRefreshVersion])
 
   useEffect(() => {
     const previousStatus = lastTimerStatus.current

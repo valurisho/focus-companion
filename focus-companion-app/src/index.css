@@ -1046,8 +1046,6 @@ button:focus-visible {
   font-size: 12px;
   font-weight: 650;
 }
-.window-dots { display: inline-flex; gap: 4px; }
-.window-dots i { width: 9px; height: 9px; border: 1.5px solid #9b9f98; border-radius: 50%; }
 .onboarding-content {
   display: flex;
   min-height: 0;

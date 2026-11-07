@@ -256,18 +256,26 @@ export function OnboardingFlow({
   const [statusMessage, setStatusMessage] = useState("");
 
   const acceptUser = useCallback(
-    async (user: User) => {
+    async (user: User, fromRestore = false) => {
       setUserId(user.id);
       setAccountEmail(user.email ?? "");
       const profile = await getOrCreateProfile(user);
-      setBuddyName(profile.buddy_name);
-      setBuddyLook(profile.buddy_look);
+      // Do NOT overwrite buddyLook or buddyName here — the user may have
+      // explicitly chosen them on the buddy page. For the onComplete path,
+      // finishOnboarding sets them from the profile. For the settings path,
+      // saveProfile reads the current state values (the user's choices).
       setUsername(profile.username ?? "");
       setSessionMinutes(profile.session_minutes);
       setDraftSessionHours(Math.floor(profile.session_minutes / 60));
       setDraftSessionMins(profile.session_minutes % 60);
       if (profile.username) {
         onComplete(profile, user.email ?? "");
+      } else if (fromRestore) {
+        // Incomplete profile found on startup — either mid-setup state or a
+        // stale session for a soft-deleted account. Sign out and go to welcome
+        // so the user starts cleanly instead of landing mid-flow.
+        await supabase.auth.signOut();
+        setPage("welcome");
       } else {
         setPage("settings");
       }
@@ -277,27 +285,22 @@ export function OnboardingFlow({
 
   useEffect(() => {
     let mounted = true;
-    void supabase.auth.getSession().then(async ({ data, error }) => {
+    // Use getUser() rather than getSession() so the session is validated
+    // against the server. This rejects stale tokens for deleted/soft-deleted
+    // accounts instead of silently treating them as valid.
+    void supabase.auth.getUser().then(async ({ data, error }) => {
       if (!mounted) return;
-      if (error) {
-        setErrorMessage(messageFromError(error));
-        setPage("welcome");
-        return;
-      }
-      if (!data.session?.user) {
+      if (error || !data.user) {
         setPage("welcome");
         return;
       }
       try {
-        await acceptUser(data.session.user);
+        await acceptUser(data.user, true);
       } catch (profileError) {
         if (!mounted) return;
-        setErrorMessage(
-          `Could not load your profile: ${messageFromError(profileError)}`,
-        );
-        setUserId(data.session.user.id);
-        setAccountEmail(data.session.user.email ?? "");
-        setPage("auth");
+        void supabase.auth.signOut();
+        setErrorMessage('Could not load your profile. Please sign in again.');
+        setPage('welcome');
       }
     });
     return () => {

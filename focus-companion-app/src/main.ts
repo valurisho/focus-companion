@@ -17,7 +17,7 @@ if (started) {
 const initialDurationMinutes = 20;
 let focusDurationMinutes = initialDurationMinutes;
 const timerPopupSize = { width: 220, height: 140 };
-const trayDiagnosticMode = true;
+const trayDiagnosticMode = false;
 
 let mainWindow: BrowserWindow | null = null;
 let timerPopup: BrowserWindow | null = null;

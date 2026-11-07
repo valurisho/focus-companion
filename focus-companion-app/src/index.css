@@ -1342,3 +1342,64 @@ button:focus-visible {
   .result-copy { margin-bottom: 5px; }
   .result-actions { gap: 5px; margin-top: 6px; }
 }
+
+/* Session-complete reward notification */
+.reward-earned {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  width: min(100%, 350px);
+  margin: 6px 0;
+  padding: 10px 16px;
+  border: 1.5px solid #e8d9b8;
+  border-radius: 13px;
+  background: #fdf5e4;
+  text-align: center;
+}
+
+.reward-earned-heading {
+  margin: 0;
+  color: #8c6a32;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+
+.reward-earned-item {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+}
+
+.reward-earned-icon {
+  font-size: 18px;
+  line-height: 1;
+}
+
+.reward-earned-name {
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--ink);
+  letter-spacing: -.01em;
+}
+
+.reward-view-closet {
+  margin-top: 2px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: #4a6150;
+  cursor: pointer;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 750;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.reward-view-closet:hover {
+  color: var(--ink);
+}

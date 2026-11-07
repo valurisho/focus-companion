@@ -329,6 +329,7 @@ function App() {
   const [closetLoading, setClosetLoading] = useState(false)
   const [closetError, setClosetError] = useState('')
   const [isEquippingAccessory, setIsEquippingAccessory] = useState(false)
+  const [newlyEarnedAccessories, setNewlyEarnedAccessories] = useState<Array<{ id: string; name: string; icon: string }>>([])
   const [modal, setModal] = useState<ModalName>(null)
   const [buddyName, setBuddyName] = useState('Tomo')
   const [draftBuddyName, setDraftBuddyName] = useState('Tomo')
@@ -344,6 +345,15 @@ function App() {
     setDraftBuddyName(nextProfile.buddy_name)
     setBuddyLook(nextProfile.buddy_look)
     setProfileMessage('')
+    setOwnedAccessories([])
+    setClosetAccessories([])
+    setCompletedSessionCount(0)
+    setNewlyEarnedAccessories([])
+    setSelectedAccessoryId(null)
+    setClosetPage('grid')
+    setClosetError('')
+    sessionCapture.current = null
+    lastTimerStatus.current = 'ready'
     void window.focusCompanion.getTimerState().then((current) => {
       if (current.status === 'ready' && current.durationMinutes !== nextProfile.session_minutes) {
         return window.focusCompanion.setTimerDuration(nextProfile.session_minutes)
@@ -358,6 +368,27 @@ function App() {
       : isPaused
         ? isBreak ? 'BREAK PAUSED' : 'PAUSED'
         : isBreak ? 'BREAK READY' : 'READY TO FOCUS'
+
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+      if (event === 'SIGNED_OUT') {
+        setProfile(null)
+        setAuthEmail('')
+        setModal(null)
+        setProfileMessage('')
+        setOwnedAccessories([])
+        setClosetAccessories([])
+        setCompletedSessionCount(0)
+        setNewlyEarnedAccessories([])
+        setSelectedAccessoryId(null)
+        setClosetPage('grid')
+        setClosetError('')
+        sessionCapture.current = null
+        lastTimerStatus.current = 'ready'
+      }
+    })
+    return () => subscription.unsubscribe()
+  }, [])
 
   useEffect(() => {
     if (modal !== 'closet' || !profile) return
@@ -413,23 +444,72 @@ function App() {
       ? sessionCapture.current
       : null
     if (completedCapture) sessionCapture.current = null
+
+    if (previousStatus === 'complete' && timer.status !== 'complete') {
+      setNewlyEarnedAccessories([])
+    }
+
     lastTimerStatus.current = timer.status
 
     if (completedCapture && profile) {
-      void supabase.from('focus_sessions').insert({
-        id: completedCapture.id,
-        user_id: profile.id,
-        started_at: completedCapture.startedAt,
-        completed_at: new Date().toISOString(),
-        duration_minutes: timer.durationMinutes,
-      }).then(({ error }) => {
+      const profileId = profile.id
+      const durationMinutes = timer.durationMinutes
+      void (async () => {
+        // 1. Snapshot owned accessory IDs before the insert so we can diff afterwards
+        const { data: beforeOwned, error: beforeError } = await supabase
+          .from('user_accessories')
+          .select('accessory_id')
+          .eq('user_id', profileId)
+        const beforeIds = new Set((beforeOwned ?? []).map((o) => o.accessory_id as string))
+
+        // 2. Save the focus session — the DB trigger fires here and grants eligible accessories
+        const { error } = await supabase.from('focus_sessions').insert({
+          id: completedCapture.id,
+          user_id: profileId,
+          started_at: completedCapture.startedAt,
+          completed_at: new Date().toISOString(),
+          duration_minutes: durationMinutes,
+        })
+
         if (error) {
           console.error('Could not save completed focus session:', error)
           setProfileMessage(`Session completed, but its progress could not be saved: ${error.message}`)
-        } else {
-          setClosetRefreshVersion((version) => version + 1)
+          return
         }
-      })
+
+        // 3. Re-query user_accessories — trigger has already run so new rows are present
+        const { data: afterOwned, error: afterError } = await supabase
+          .from('user_accessories')
+          .select('accessory_id, unlocked_at, is_equipped')
+          .eq('user_id', profileId)
+
+        if (afterError || !afterOwned) {
+          // Reward detection failed — session is saved; fail gracefully without false reward claim
+          setClosetRefreshVersion((version) => version + 1)
+          return
+        }
+
+        // 4. Update owned accessories state with fresh data
+        setOwnedAccessories(afterOwned as OwnedAccessory[])
+
+        // 5. Find IDs present after the insert but not before
+        const newIds = (afterOwned as OwnedAccessory[])
+          .map((o) => o.accessory_id)
+          .filter((id) => !beforeIds.has(id))
+
+        if (!beforeError && newIds.length > 0) {
+          const { data: newItems } = await supabase
+            .from('accessories')
+            .select('id, name, icon')
+            .in('id', newIds)
+          if (newItems && newItems.length > 0) {
+            setNewlyEarnedAccessories(newItems as Array<{ id: string; name: string; icon: string }>)
+          }
+        }
+
+        // 6. Trigger a full closet refresh
+        setClosetRefreshVersion((version) => version + 1)
+      })()
     }
   }, [timer.status, timer.mode, timer.durationMinutes, profile])
 
@@ -512,6 +592,15 @@ function App() {
     setAuthEmail('')
     setModal(null)
     setProfileMessage('')
+    setOwnedAccessories([])
+    setClosetAccessories([])
+    setCompletedSessionCount(0)
+    setNewlyEarnedAccessories([])
+    setSelectedAccessoryId(null)
+    setClosetPage('grid')
+    setClosetError('')
+    sessionCapture.current = null
+    lastTimerStatus.current = 'ready'
   }
 
   const ownedAccessoryIds = new Set(ownedAccessories.map((owned) => owned.accessory_id))
@@ -566,6 +655,27 @@ function App() {
               <p className="result-copy">
                 {isBreak ? 'Ready to start another focus session?' : `You focused for ${formatDuration(sessionMinutes)}.`}
               </p>
+              {!isBreak && newlyEarnedAccessories.length > 0 && (
+                <div className="reward-earned">
+                  <p className="reward-earned-heading">
+                    {newlyEarnedAccessories.length === 1
+                      ? 'You earned a new accessory!'
+                      : `You earned ${newlyEarnedAccessories.length} new accessories!`}
+                  </p>
+                  {newlyEarnedAccessories.map((acc) => (
+                    <div key={acc.id} className="reward-earned-item">
+                      <span className="reward-earned-icon">{acc.icon || '✦'}</span>
+                      <strong className="reward-earned-name">{acc.name}</strong>
+                    </div>
+                  ))}
+                  <button
+                    className="reward-view-closet"
+                    onClick={() => { setClosetPage('grid'); setModal('closet') }}
+                  >
+                    View in Closet
+                  </button>
+                </div>
+              )}
               <div className="scene-frame result-scene">
                 <BuddyScene look={buddyLook} accessory={equippedAccessory} />
               </div>

@@ -23,6 +23,7 @@ const trayDiagnosticMode = false;
 
 let mainWindow: BrowserWindow | null = null;
 let timerPopup: BrowserWindow | null = null;
+let desktopPetWindow: BrowserWindow | null = null;
 let tray: Tray | null = null;
 let timerPopupReady = false;
 let timerPopupWantedVisible = false;
@@ -38,6 +39,11 @@ let timerState: TimerSnapshot = {
   mode: 'focus',
   durationMinutes: initialDurationMinutes,
   remainingSeconds: initialDurationMinutes * 60,
+};
+let desktopPetAppearance: DesktopPetAppearance = {
+  buddyName: 'Tomo',
+  look: 'blob',
+  accessory: null,
 };
 
 function formatTime(seconds: number) {
@@ -215,7 +221,60 @@ function resetTimer(): TimerSnapshot {
 }
 
 function isTrustedRenderer(event: IpcMainInvokeEvent) {
-  return [mainWindow, timerPopup].some((window) => window && !window.isDestroyed() && window.webContents === event.sender);
+  return [mainWindow, timerPopup, desktopPetWindow].some((window) => window && !window.isDestroyed() && window.webContents === event.sender);
+}
+
+function createDesktopPetWindow() {
+  if (desktopPetWindow && !desktopPetWindow.isDestroyed()) return desktopPetWindow;
+
+  const { workArea } = screen.getPrimaryDisplay();
+  const width = 132;
+  const height = 132;
+  const window = new BrowserWindow({
+    x: workArea.x + workArea.width - width - 24,
+    y: workArea.y + workArea.height - height - 32,
+    width,
+    height,
+    frame: false,
+    transparent: true,
+    backgroundColor: '#00000000',
+    resizable: false,
+    minimizable: false,
+    maximizable: false,
+    fullscreenable: false,
+    hasShadow: false,
+    alwaysOnTop: true,
+    skipTaskbar: true,
+    webPreferences: {
+      preload: path.join(__dirname, 'preload.js'),
+      nodeIntegration: false,
+      contextIsolation: true,
+      sandbox: true,
+    },
+  });
+
+  desktopPetWindow = window;
+  if (process.platform === 'darwin') {
+    window.setAlwaysOnTop(true, 'floating');
+    window.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: false });
+  }
+  window.on('closed', () => {
+    if (desktopPetWindow === window) desktopPetWindow = null;
+  });
+  window.webContents.on('did-finish-load', () => {
+    window.webContents.send('pet:appearance-updated', desktopPetAppearance);
+  });
+  loadRenderer(window, 'pet');
+  return window;
+}
+
+function setDesktopPetVisible(visible: boolean) {
+  if (visible) {
+    const window = createDesktopPetWindow();
+    window.showInactive();
+  } else {
+    desktopPetWindow?.hide();
+  }
 }
 
 function registerTimerIpc() {
@@ -292,6 +351,44 @@ function registerTimerIpc() {
     timerPopupWantedVisible = false;
     timerPopup?.hide();
     createMainWindow();
+  });
+
+  ipcMain.handle('pet:set-visible', (event, visible: unknown) => {
+    if (!isTrustedRenderer(event)) throw new Error('Untrusted renderer changed desktop pet visibility.');
+    if (typeof visible !== 'boolean') throw new Error('Desktop pet visibility must be true or false.');
+    setDesktopPetVisible(visible);
+  });
+
+  ipcMain.handle('pet:close', (event) => {
+    if (!desktopPetWindow || desktopPetWindow.isDestroyed() || desktopPetWindow.webContents !== event.sender) {
+      throw new Error('Only the desktop pet can close its own window.');
+    }
+    desktopPetWindow.close();
+  });
+
+  ipcMain.handle('pet:set-appearance', (event, value: unknown) => {
+    if (!isTrustedRenderer(event)) throw new Error('Untrusted renderer changed desktop pet appearance.');
+    if (typeof value !== 'object' || value === null) throw new Error('Desktop pet appearance must be an object.');
+    const appearance = value as Partial<DesktopPetAppearance>;
+    const look = ['blob', 'cat', 'owl'].includes(String(appearance.look)) ? appearance.look as DesktopPetAppearance['look'] : 'blob';
+    const accessory = appearance.accessory && typeof appearance.accessory === 'object'
+      ? {
+          name: String(appearance.accessory.name ?? '').slice(0, 60),
+          icon: String(appearance.accessory.icon ?? '✦').slice(0, 8),
+          slot: String(appearance.accessory.slot ?? 'other').slice(0, 24),
+        }
+      : null;
+    desktopPetAppearance = {
+      buddyName: String(appearance.buddyName ?? 'Tomo').trim().slice(0, 20) || 'Tomo',
+      look,
+      accessory,
+    };
+    desktopPetWindow?.webContents.send('pet:appearance-updated', desktopPetAppearance);
+  });
+
+  ipcMain.handle('pet:get-appearance', (event) => {
+    if (!isTrustedRenderer(event)) throw new Error('Untrusted renderer requested desktop pet appearance.');
+    return desktopPetAppearance;
   });
 }
 

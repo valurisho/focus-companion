@@ -8,6 +8,14 @@ interface TimerSnapshot {
   remainingSeconds: number
 }
 
+type DesktopPetAccessorySlot = 'hat' | 'glasses' | 'scarf' | 'headphones' | 'backpack' | string
+
+interface DesktopPetAppearance {
+  buddyName: string
+  look: 'blob' | 'cat' | 'owl'
+  accessory: { name: string; icon: string; slot: DesktopPetAccessorySlot } | null
+}
+
 interface Window {
   focusCompanion: {
     platform: NodeJS.Platform
@@ -28,5 +36,10 @@ interface Window {
     hidePopup: () => Promise<void>
     showMainWindow: () => Promise<void>
     onCelebration: (callback: () => void) => () => void
+    setDesktopPetVisible: (visible: boolean) => Promise<void>
+    closeDesktopPet: () => Promise<void>
+    setDesktopPetAppearance: (appearance: DesktopPetAppearance) => Promise<void>
+    getDesktopPetAppearance: () => Promise<DesktopPetAppearance>
+    onDesktopPetAppearance: (callback: (appearance: DesktopPetAppearance) => void) => () => void
   }
 }

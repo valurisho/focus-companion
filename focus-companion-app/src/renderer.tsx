@@ -241,6 +241,46 @@ function TimerPopup() {
   )
 }
 
+function DesktopPet() {
+  const [appearance, setAppearance] = useState<DesktopPetAppearance>({
+    buddyName: 'Tomo',
+    look: 'blob',
+    accessory: null,
+  })
+
+  useEffect(() => {
+    document.documentElement.classList.add('desktop-pet-window')
+    document.body.classList.add('desktop-pet-window')
+    let active = true
+    const unsubscribe = window.focusCompanion.onDesktopPetAppearance(setAppearance)
+    void window.focusCompanion.getDesktopPetAppearance().then((current) => {
+      if (active) setAppearance(current)
+    })
+    return () => {
+      active = false
+      unsubscribe()
+      document.documentElement.classList.remove('desktop-pet-window')
+      document.body.classList.remove('desktop-pet-window')
+    }
+  }, [])
+
+  return (
+    <main className="desktop-pet-screen" aria-label={`${appearance.buddyName}'s desktop companion`}>
+      <button
+        className="desktop-pet-hide"
+        aria-label="Hide desktop buddy"
+        title="Hide buddy"
+        onClick={() => { void window.focusCompanion.closeDesktopPet() }}
+      >
+        ×
+      </button>
+      <div className="desktop-pet-avatar-drag" role="img" aria-label={appearance.buddyName}>
+        <BuddyAvatar look={appearance.look} className="desktop-pet-avatar" />
+      </div>
+    </main>
+  )
+}
+
 function BuddyScene({ look, accessory, showBook = false }: { look: BuddyLook; accessory?: ClosetAccessory; showBook?: boolean }) {
   return (
     <svg
@@ -323,6 +363,7 @@ function App() {
   ))
   const [maxFocusNudgeVisible, setMaxFocusNudgeVisible] = useState(false)
   const [maxFocusConsentOpen, setMaxFocusConsentOpen] = useState(false)
+  const [desktopPetEnabled, setDesktopPetEnabled] = useState(() => window.localStorage.getItem('tomo.desktop-pet.enabled') === 'true')
   const maxFocusAudioContext = useRef<AudioContext | null>(null)
   const [authEmail, setAuthEmail] = useState('')
   const [buddyLook, setBuddyLook] = useState<BuddyLook>('blob')
@@ -405,6 +446,13 @@ function App() {
     window.localStorage.setItem('tomo.max-focus.enabled', String(maxFocusEnabled))
     void window.focusCompanion.setMaxFocusEnabled(maxFocusEnabled)
   }, [maxFocusEnabled])
+
+  useEffect(() => {
+    window.localStorage.setItem('tomo.desktop-pet.enabled', String(desktopPetEnabled))
+    void window.focusCompanion.setDesktopPetVisible(
+      desktopPetEnabled && Boolean(profile) && timer.status === 'running',
+    )
+  }, [desktopPetEnabled, profile?.id, timer.status])
 
   useEffect(() => {
     let active = true
@@ -685,6 +733,17 @@ function App() {
   const earnedAccessories = closetAccessories.filter((accessory) => ownedAccessoryIds.has(accessory.id))
   const equippedOwnedAccessory = ownedAccessories.find((owned) => owned.is_equipped)
   const equippedAccessory = closetAccessories.find((accessory) => accessory.id === equippedOwnedAccessory?.accessory_id)
+
+  useEffect(() => {
+    void window.focusCompanion.setDesktopPetAppearance({
+      buddyName: profile ? buddyName : 'Tomo',
+      look: profile ? buddyLook : 'blob',
+      accessory: profile && equippedAccessory
+        ? { name: equippedAccessory.name, icon: equippedAccessory.icon || '✦', slot: equippedAccessory.slot }
+        : null,
+    })
+  }, [profile?.id, buddyName, buddyLook, equippedAccessory?.id])
+
   const selectedTryOnIndex = Math.max(0, earnedAccessories.findIndex((accessory) => accessory.id === selectedAccessoryId))
   const selectedTryOnAccessory = earnedAccessories[selectedTryOnIndex]
 
@@ -982,6 +1041,22 @@ function App() {
               <>
                 <p className="eyebrow">YOUR PREFERENCES</p>
                 <h2 id="modal-title">Settings</h2>
+                <div className="settings-row desktop-pet-setting">
+                  <div>
+                    <span className="settings-row-title">Show Buddy on desktop</span>
+                    <span className="settings-row-value">A small movable window stays above your other apps.</span>
+                  </div>
+                  <button
+                    className={`desktop-pet-toggle ${desktopPetEnabled ? 'enabled' : ''}`}
+                    type="button"
+                    role="switch"
+                    aria-checked={desktopPetEnabled}
+                    aria-label="Show Buddy on desktop"
+                    onClick={() => setDesktopPetEnabled((enabled) => !enabled)}
+                  >
+                    <span />
+                  </button>
+                </div>
                 <div className="settings-account">
                   <span className="settings-row-title">Signed in as</span>
                   <span className="settings-row-value">{authEmail}</span>
@@ -1217,4 +1292,9 @@ if (!container) {
 }
 
 const isTimerPopup = new URLSearchParams(window.location.search).get('view') === 'timer'
-createRoot(container).render(isTimerPopup ? <TimerPopup /> : <App />)
+const isDesktopPet = new URLSearchParams(window.location.search).get('view') === 'pet'
+if (isDesktopPet) {
+  document.documentElement.classList.add('desktop-pet-window')
+  document.body.classList.add('desktop-pet-window')
+}
+createRoot(container).render(isTimerPopup ? <TimerPopup /> : isDesktopPet ? <DesktopPet /> : <App />)

@@ -35,4 +35,13 @@ contextBridge.exposeInMainWorld('focusCompanion', {
     ipcRenderer.on('celebration:start', listener);
     return () => ipcRenderer.removeListener('celebration:start', listener);
   },
+  setDesktopPetVisible: (visible: boolean) => ipcRenderer.invoke('pet:set-visible', visible),
+  closeDesktopPet: () => ipcRenderer.invoke('pet:close'),
+  setDesktopPetAppearance: (appearance: DesktopPetAppearance) => ipcRenderer.invoke('pet:set-appearance', appearance),
+  getDesktopPetAppearance: () => ipcRenderer.invoke('pet:get-appearance'),
+  onDesktopPetAppearance: (callback: (appearance: DesktopPetAppearance) => void) => {
+    const listener = (_event: Electron.IpcRendererEvent, appearance: DesktopPetAppearance) => callback(appearance);
+    ipcRenderer.on('pet:appearance-updated', listener);
+    return () => ipcRenderer.removeListener('pet:appearance-updated', listener);
+  },
 });

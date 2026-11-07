@@ -3,6 +3,7 @@ import {
   BrowserWindow,
   ipcMain,
   nativeImage,
+  powerMonitor,
   screen,
   Tray,
   type IpcMainInvokeEvent,
@@ -15,6 +16,7 @@ if (started) {
 }
 
 const initialDurationMinutes = 20;
+const maxFocusIdleThresholdSeconds = 3 * 60;
 let focusDurationMinutes = initialDurationMinutes;
 const timerPopupSize = { width: 220, height: 140 };
 const trayDiagnosticMode = false;
@@ -28,6 +30,9 @@ let showPopupInactive = false;
 let pendingCelebration = false;
 let timerEndsAt: number | null = null;
 let timerInterval: ReturnType<typeof setInterval> | null = null;
+let maxFocusEnabled = false;
+let maxFocusNudgeSent = false;
+let maxFocusNudgePending = false;
 let timerState: TimerSnapshot = {
   status: 'ready',
   mode: 'focus',
@@ -58,6 +63,44 @@ function getTimerSnapshot(): TimerSnapshot {
   return { ...timerState };
 }
 
+function checkMaxFocusActivity(snapshot: TimerSnapshot) {
+  if (!maxFocusEnabled || snapshot.status !== 'running' || snapshot.mode !== 'focus') {
+    maxFocusNudgeSent = false;
+    maxFocusNudgePending = false;
+    return;
+  }
+
+  const idleSeconds = powerMonitor.getSystemIdleTime();
+  if (idleSeconds < maxFocusIdleThresholdSeconds) {
+    const wasNudged = maxFocusNudgeSent || maxFocusNudgePending;
+    maxFocusNudgeSent = false;
+    maxFocusNudgePending = false;
+    if (wasNudged && mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send('max-focus:activity-resumed');
+    }
+    return;
+  }
+
+  if (maxFocusNudgeSent) return;
+
+  maxFocusNudgeSent = true;
+  maxFocusNudgePending = true;
+  showMaxFocusNudge();
+}
+
+function showMaxFocusNudge() {
+  const window = mainWindow && !mainWindow.isDestroyed() ? mainWindow : createMainWindow();
+  if (window.isMinimized()) window.restore();
+
+  if (process.platform === 'darwin') {
+    app.focus({ steal: true });
+  }
+
+  window.show();
+  window.focus();
+  window.webContents.send('max-focus:idle-nudge');
+}
+
 function publishTimerState(): TimerSnapshot {
   const previousStatus = timerState.status;
   const snapshot = getTimerSnapshot();
@@ -71,6 +114,8 @@ function publishTimerState(): TimerSnapshot {
       window.webContents.send('timer:updated', snapshot);
     }
   }
+
+  checkMaxFocusActivity(snapshot);
 
   if (snapshot.status !== 'running' && timerInterval !== null) {
     clearInterval(timerInterval);
@@ -177,6 +222,28 @@ function registerTimerIpc() {
   ipcMain.handle('timer:get-state', (event) => {
     if (!isTrustedRenderer(event)) throw new Error('Untrusted renderer requested timer state.');
     return getTimerSnapshot();
+  });
+
+  ipcMain.handle('max-focus:set-enabled', (event, enabled: unknown) => {
+    if (!isTrustedRenderer(event)) throw new Error('Untrusted renderer changed Max Focus settings.');
+    if (typeof enabled !== 'boolean') throw new Error('Max Focus setting must be true or false.');
+    maxFocusEnabled = enabled;
+    maxFocusNudgeSent = false;
+    maxFocusNudgePending = false;
+    if (enabled) checkMaxFocusActivity(getTimerSnapshot());
+    return undefined;
+  });
+
+  ipcMain.handle('max-focus:get-pending-nudge', (event) => {
+    if (!isTrustedRenderer(event)) throw new Error('Untrusted renderer requested Max Focus state.');
+    const pending = maxFocusNudgePending;
+    maxFocusNudgePending = false;
+    return pending;
+  });
+
+  ipcMain.handle('max-focus:dismiss-nudge', (event) => {
+    if (!isTrustedRenderer(event)) throw new Error('Untrusted renderer dismissed a Max Focus nudge.');
+    maxFocusNudgePending = false;
   });
 
   ipcMain.handle('timer:start', (event) => {

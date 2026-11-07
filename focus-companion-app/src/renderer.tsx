@@ -317,6 +317,13 @@ function App() {
   const isTimedSession = isRunning || isPaused || isComplete
   const hasValidDuration = sessionMinutes >= 5
   const [profile, setProfile] = useState<UserProfile | null>(null)
+  const [maxFocusEnabled, setMaxFocusEnabled] = useState(() => (
+    window.localStorage.getItem('tomo.max-focus-consent-v2') === 'accepted'
+    && window.localStorage.getItem('tomo.max-focus.enabled') === 'true'
+  ))
+  const [maxFocusNudgeVisible, setMaxFocusNudgeVisible] = useState(false)
+  const [maxFocusConsentOpen, setMaxFocusConsentOpen] = useState(false)
+  const maxFocusAudioContext = useRef<AudioContext | null>(null)
   const [authEmail, setAuthEmail] = useState('')
   const [buddyLook, setBuddyLook] = useState<BuddyLook>('blob')
   const [profileMessage, setProfileMessage] = useState('')
@@ -368,6 +375,77 @@ function App() {
       : isPaused
         ? isBreak ? 'BREAK PAUSED' : 'PAUSED'
         : isBreak ? 'BREAK READY' : 'READY TO FOCUS'
+
+  const showMaxFocusNudge = () => {
+    setMaxFocusNudgeVisible(true)
+    if (typeof AudioContext === 'undefined') return
+
+    const audioContext = maxFocusAudioContext.current ?? new AudioContext()
+    maxFocusAudioContext.current = audioContext
+    if (audioContext.state === 'suspended') void audioContext.resume()
+
+    const oscillator = audioContext.createOscillator()
+    const gain = audioContext.createGain()
+    const now = audioContext.currentTime
+    oscillator.type = 'sine'
+    oscillator.frequency.setValueAtTime(660, now)
+    oscillator.frequency.setValueAtTime(880, now + 0.1)
+    gain.gain.setValueAtTime(0.0001, now)
+    gain.gain.exponentialRampToValueAtTime(0.045, now + 0.02)
+    gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.28)
+    oscillator.connect(gain)
+    gain.connect(audioContext.destination)
+    oscillator.start(now)
+    oscillator.stop(now + 0.29)
+  }
+
+  const hideMaxFocusNudge = () => setMaxFocusNudgeVisible(false)
+
+  useEffect(() => {
+    window.localStorage.setItem('tomo.max-focus.enabled', String(maxFocusEnabled))
+    void window.focusCompanion.setMaxFocusEnabled(maxFocusEnabled)
+  }, [maxFocusEnabled])
+
+  useEffect(() => {
+    let active = true
+    const unsubscribeNudge = window.focusCompanion.onMaxFocusNudge(showMaxFocusNudge)
+    const unsubscribeActivity = window.focusCompanion.onMaxFocusActivity(hideMaxFocusNudge)
+
+    void window.focusCompanion.getPendingMaxFocusNudge().then((pending) => {
+      if (active && pending) setMaxFocusNudgeVisible(true)
+    })
+
+    return () => {
+      active = false
+      unsubscribeNudge()
+      unsubscribeActivity()
+    }
+  }, [])
+
+  useEffect(() => {
+    if (!maxFocusEnabled || timer.status !== 'running' || timer.mode !== 'focus') {
+      setMaxFocusNudgeVisible(false)
+    }
+  }, [maxFocusEnabled, timer.status, timer.mode])
+
+  const acceptMaxFocus = () => {
+    if (typeof AudioContext !== 'undefined') {
+      const audioContext = maxFocusAudioContext.current ?? new AudioContext()
+      maxFocusAudioContext.current = audioContext
+      if (audioContext.state === 'suspended') void audioContext.resume().catch(() => undefined)
+    }
+    window.localStorage.setItem('tomo.max-focus-consent-v2', 'accepted')
+    setMaxFocusEnabled(true)
+    setMaxFocusConsentOpen(false)
+  }
+
+  const toggleMaxFocus = () => {
+    if (maxFocusEnabled) {
+      setMaxFocusEnabled(false)
+    } else {
+      setMaxFocusConsentOpen(true)
+    }
+  }
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
@@ -644,6 +722,36 @@ function App() {
           <span className="buddy-status"><span /> {buddyName || 'Tomo'} is here</span>
         </header>
 
+        {maxFocusNudgeVisible && maxFocusEnabled && isRunning && !isBreak && (
+          <aside className="max-focus-nudge" role="alert" aria-live="assertive">
+            <strong>Still focusing?</strong>
+            <p>There hasn’t been keyboard or pointer activity for 3 minutes.</p>
+            <div className="max-focus-nudge-actions">
+              <button
+                type="button"
+                className="nudge-dismiss-button"
+                onClick={() => {
+                  setMaxFocusNudgeVisible(false)
+                  void window.focusCompanion.dismissMaxFocusNudge()
+                }}
+              >
+                I’m still here
+              </button>
+              <button
+                type="button"
+                className="nudge-pause-button"
+                onClick={() => {
+                  setMaxFocusNudgeVisible(false)
+                  void window.focusCompanion.dismissMaxFocusNudge()
+                  void window.focusCompanion.pauseTimer()
+                }}
+              >
+                Pause timer
+              </button>
+            </div>
+          </aside>
+        )}
+
         <section className={`focus-content ${isTimedSession ? 'session-mode-content' : ''}`} aria-label="Focus timer and companion">
           {isComplete ? (
             <div className={`timer-result ${isBreak ? 'break-result' : ''}`}>
@@ -805,12 +913,19 @@ function App() {
 
         {!isTimedSession && (
           <footer className="bottom-bar">
-            <div className="max-focus" aria-label="Max Focus is coming soon">
-              <button className="switch" type="button" disabled aria-label="Max Focus off, coming soon">
+          <div className="max-focus">
+            <button
+              className={`switch ${maxFocusEnabled ? 'is-on' : ''}`}
+              type="button"
+              role="switch"
+              aria-checked={maxFocusEnabled}
+              aria-label={`Max Focus ${maxFocusEnabled ? 'on' : 'off'}`}
+              onClick={toggleMaxFocus}
+            >
                 <span />
               </button>
               <span className="max-focus-label">Max Focus</span>
-              <span className="coming-soon">Coming soon</span>
+            <span className="max-focus-description">{maxFocusEnabled ? 'On · 3 min idle' : 'Off'}</span>
             </div>
             <div className="footer-actions">
               <button className="secondary-button" onClick={() => { setIsEditingName(false); setModal('settings') }}>Settings</button>
@@ -1061,6 +1176,33 @@ function App() {
                 )}
               </div>
             )}
+          </section>
+        </div>
+      )}
+
+      {maxFocusConsentOpen && (
+        <div
+          className="modal-backdrop"
+          onMouseDown={(event) => event.target === event.currentTarget && setMaxFocusConsentOpen(false)}
+        >
+          <section
+            className="modal-card max-focus-consent-card"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="max-focus-consent-title"
+            aria-describedby="max-focus-consent-description"
+          >
+            <p className="eyebrow">OPTIONAL FOCUS SUPPORT</p>
+            <h2 id="max-focus-consent-title">Turn on Max Focus?</h2>
+            <p id="max-focus-consent-description" className="modal-description">
+              During a focus session, Tomo’s Nook checks for keyboard or pointer activity anywhere on your Mac.
+              After 3 minutes without activity, it brings its window to the front, plays a short chime, and asks if you’re still focusing.
+            </p>
+            <p className="max-focus-privacy-note">It doesn’t record your screen or use your camera.</p>
+            <div className="modal-actions max-focus-consent-actions">
+              <button className="secondary-button" onClick={() => setMaxFocusConsentOpen(false)}>Deny</button>
+              <button className="confirm-button" onClick={acceptMaxFocus}>Accept &amp; turn on</button>
+            </div>
           </section>
         </div>
       )}

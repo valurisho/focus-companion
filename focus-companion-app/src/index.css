@@ -194,6 +194,7 @@ button:focus-visible {
 }
 
 .study-window {
+  position: relative;
   display: flex;
   width: 100%;
   height: 100%;
@@ -507,6 +508,8 @@ button:focus-visible {
   border: 1.5px solid #c9ccc6;
   border-radius: 99px;
   background: #e8e9e5;
+  cursor: pointer;
+  transition: background .18s ease, border-color .18s ease;
 }
 
 .switch span {
@@ -515,6 +518,17 @@ button:focus-visible {
   height: 17px;
   border-radius: 50%;
   background: #a8aaa6;
+  transition: background .18s ease, transform .18s ease;
+}
+
+.switch.is-on {
+  border-color: #708472;
+  background: #708472;
+}
+
+.switch.is-on span {
+  transform: translateX(18px);
+  background: #fffefa;
 }
 
 .max-focus-label {
@@ -525,6 +539,76 @@ button:focus-visible {
 .coming-soon {
   color: #959891;
   font-size: 10px;
+}
+
+.max-focus-description {
+  color: #777b75;
+  font-size: 10px;
+  white-space: nowrap;
+}
+
+.max-focus-nudge {
+  position: absolute;
+  z-index: 4;
+  top: 70px;
+  right: 18px;
+  width: min(290px, calc(100% - 36px));
+  padding: 13px 14px 12px;
+  border: 1.5px solid #343734;
+  border-radius: 13px;
+  background: #fffefa;
+  box-shadow: 0 8px 24px rgb(30 34 29 / 18%);
+}
+
+.max-focus-nudge strong {
+  display: block;
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.max-focus-nudge p {
+  margin: 4px 0 10px;
+  color: #686d66;
+  font-size: 10px;
+  line-height: 1.4;
+}
+
+.max-focus-nudge-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 7px;
+}
+
+.max-focus-nudge-actions button {
+  min-height: 31px;
+  padding: 0 9px;
+  border: 1px solid #343734;
+  border-radius: 8px;
+  font-size: 10px;
+  font-weight: 750;
+  cursor: pointer;
+}
+
+.nudge-dismiss-button { background: white; }
+.nudge-pause-button { background: #242723; color: white; }
+
+.max-focus-consent-card {
+  width: min(100%, 420px);
+  padding: 24px;
+}
+
+.max-focus-privacy-note {
+  margin: -8px 0 20px;
+  color: #646a62;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.max-focus-consent-actions .secondary-button,
+.max-focus-consent-actions .confirm-button {
+  min-height: 44px;
+  padding: 0 13px;
+  font-size: 12px;
 }
 
 .footer-actions {

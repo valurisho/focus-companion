@@ -438,14 +438,11 @@ export function OnboardingFlow({
   }
 
   return (
-    <main className="app-shell onboarding-shell">
+    <main className={`app-shell onboarding-shell ${page === "welcome" ? "welcome-shell" : ""}`}>
       <section
         className="study-window onboarding-window"
         aria-label="Tomo's Nook setup"
       >
-        <header className="onboarding-window-bar">
-          <span>Tomo's Nook</span>
-        </header>
 
         <div className="onboarding-content">
           {page === "welcome" && (
@@ -454,7 +451,7 @@ export function OnboardingFlow({
                 <BuddyAvatar look={buddyLook} className="onboarding-avatar" />
               </div>
               <p className="eyebrow">A LITTLE COMPANION FOR YOUR FOCUS</p>
-              <h1>Tomo's Nook</h1>
+              <h1><span>Tomo's</span><span>Nook</span></h1>
               <p className="onboarding-copy">
                 Stay focused, finish sessions, and help your buddy grow along
                 the way.

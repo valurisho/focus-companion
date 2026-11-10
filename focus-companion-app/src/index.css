@@ -124,8 +124,9 @@ button:focus-visible {
 .timer-popup-celebration-title {
   margin: 3px 0 1px;
   color: #8c6a32;
+  font-family: "bd-caramel-variable", Inter, ui-sans-serif, system-ui, sans-serif;
   font-size: 18px;
-  font-weight: 850;
+  font-weight: 400;
   letter-spacing: -.025em;
 }
 
@@ -249,9 +250,10 @@ button:focus-visible {
 
 .top-bar h1 {
   margin: 0;
+  font-family: "bd-caramel-variable", Inter, ui-sans-serif, system-ui, sans-serif;
   font-size: 17px;
-  font-weight: 750;
-  letter-spacing: -.02em;
+  font-weight: 400;
+  letter-spacing: 0;
 }
 
 .buddy-status {
@@ -434,8 +436,10 @@ button:focus-visible {
 
 .buddy-caption h2 {
   margin: 0;
+  font-family: "bd-caramel-variable", Inter, ui-sans-serif, system-ui, sans-serif;
   font-size: 17px;
-  font-weight: 800;
+  font-weight: 400;
+  letter-spacing: 0;
 }
 
 .buddy-caption p {
@@ -1099,15 +1103,55 @@ button:focus-visible {
 .onboarding-card h1 {
   margin: 8px 0 5px;
   color: var(--ink);
+  font-family: "bd-caramel-variable", Inter, ui-sans-serif, system-ui, sans-serif;
   font-size: 23px;
-  font-weight: 800;
-  letter-spacing: -.04em;
+  font-weight: 400;
+  letter-spacing: 0;
   line-height: 1.15;
 }
 .onboarding-copy { margin: 0 0 18px; color: #666b64; font-size: 13px; line-height: 1.45; }
 .onboarding-loading { display: grid; align-content: center; justify-items: center; flex: 1; color: var(--muted); font-size: 13px; }
 .loading-mark { color: #9c755e; font-size: 30px; }
 .welcome-card { display: flex; max-width: 340px; flex-direction: column; align-items: center; margin: auto; text-align: center; }
+.welcome-shell {
+  background: #242723;
+}
+.welcome-shell .study-window {
+  border: 0;
+  border-radius: 0;
+  background: #242723;
+  color: #fffefa;
+}
+.welcome-shell .onboarding-window-bar {
+  border-bottom: 0;
+  color: #fffefa;
+  font-size: 14px;
+}
+.welcome-shell .onboarding-content {
+  color: #fffefa;
+}
+.welcome-shell .welcome-card .eyebrow {
+  margin-bottom: 8px;
+  color: #c9d3c7;
+  font-size: 12px;
+  letter-spacing: .12em;
+}
+.welcome-shell .welcome-card h1 {
+  margin: 0 0 12px;
+  color: #fffefa;
+  font-size: 44px;
+  line-height: 1.08;
+}
+.welcome-shell .welcome-card h1 span {
+  display: block;
+}
+.welcome-shell .welcome-card .onboarding-copy {
+  max-width: 330px;
+  margin-bottom: 26px;
+  color: #e2e5df;
+  font-size: 17px;
+  line-height: 1.5;
+}
 .welcome-buddy {
   display: grid;
   width: 106px;
@@ -1119,6 +1163,10 @@ button:focus-visible {
   background: #f5f5f0;
 }
 .onboarding-avatar { width: 66px; height: 66px; }
+.welcome-shell .welcome-buddy {
+  border-color: #727b70;
+  background: #353a34;
+}
 .avatar-body { fill: #fffefa; stroke: #343a34; stroke-width: 2.5; stroke-linejoin: round; }
 .avatar-ears { fill: none; stroke: #343a34; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
 .avatar-eye { fill: #343a34; }
@@ -1215,6 +1263,17 @@ body.desktop-pet-window {
   transition: background-color .15s ease, transform .15s ease;
 }
 .onboarding-primary { background: #242723; color: white; }
+.welcome-shell .onboarding-primary {
+  min-height: 52px;
+  padding: 0 27px;
+  border-color: #e6eee5;
+  background: #e6eee5;
+  color: #242723;
+  font-size: 16px;
+}
+.welcome-shell .onboarding-primary:hover:not(:disabled) {
+  background: #d4e1d2;
+}
 .onboarding-primary:hover:not(:disabled) { background: #414740; transform: translateY(-1px); }
 .onboarding-primary:disabled { cursor: wait; opacity: .65; }
 .onboarding-primary.compact { min-width: 120px; }
@@ -1222,6 +1281,13 @@ body.desktop-pet-window {
 .onboarding-secondary { min-width: 76px; background: transparent; color: var(--ink); }
 .onboarding-secondary:hover { background: #f2f2ed; }
 .onboarding-switch { margin: 13px 0 0; color: #6d716a; font-size: 11px; text-align: center; }
+.welcome-shell .onboarding-switch {
+  color: #d3d7d0;
+  font-size: 14px;
+}
+.welcome-shell .onboarding-switch button {
+  color: #fffefa;
+}
 .onboarding-switch button, .text-button {
   padding: 0;
   border: 0;
@@ -1502,9 +1568,10 @@ body.desktop-pet-window {
 
 .result-title {
   margin: 7px 0 0;
+  font-family: "bd-caramel-variable", Inter, ui-sans-serif, system-ui, sans-serif;
   font-size: 21px;
-  font-weight: 850;
-  letter-spacing: -.035em;
+  font-weight: 400;
+  letter-spacing: 0;
   text-align: center;
 }
 

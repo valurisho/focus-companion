@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState, type FormEvent, type KeyboardEvent } from "react";
 import type { User } from "@supabase/supabase-js";
 import { supabase } from "./utils/supabase";
+import welcomeMark from "../assets/welcome-mark.svg";
 
 export type BuddyLook = "blob" | "cat" | "owl";
 
@@ -447,11 +448,11 @@ export function OnboardingFlow({
         <div className="onboarding-content">
           {page === "welcome" && (
             <section className="onboarding-card welcome-card">
-              <div className="welcome-buddy">
-                <BuddyAvatar look={buddyLook} className="onboarding-avatar" />
-              </div>
               <p className="eyebrow">A LITTLE COMPANION FOR YOUR FOCUS</p>
               <h1><span>Tomo's</span><span>Nook</span></h1>
+              <div className="welcome-buddy" aria-hidden="true">
+                <img className="welcome-mark" src={welcomeMark} alt="" />
+              </div>
               <p className="onboarding-copy">
                 Stay focused, finish sessions, and help your buddy grow along
                 the way.

@@ -1164,8 +1164,18 @@ button:focus-visible {
 }
 .onboarding-avatar { width: 66px; height: 66px; }
 .welcome-shell .welcome-buddy {
-  border-color: #727b70;
-  background: #353a34;
+  width: 100px;
+  height: 95px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+.welcome-mark {
+  display: block;
+  width: 100px;
+  height: 95px;
+  object-fit: contain;
+  filter: brightness(0) invert(1);
 }
 .avatar-body { fill: #fffefa; stroke: #343a34; stroke-width: 2.5; stroke-linejoin: round; }
 .avatar-ears { fill: none; stroke: #343a34; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }

@@ -46,9 +46,16 @@ let desktopPetAppearance: DesktopPetAppearance = {
   accessory: null,
 };
 
-function formatTime(seconds: number) {
+function formatTime(seconds: number, durationMinutes = 0, includeSeconds = true) {
+  const hours = Math.floor(seconds / 3600);
   const minutes = Math.floor(seconds / 60);
   const remainder = seconds % 60;
+  if (!includeSeconds) {
+    return `${String(hours).padStart(2, '0')}:${String(minutes % 60).padStart(2, '0')}`;
+  }
+  if (durationMinutes >= 60) {
+    return `${String(hours).padStart(2, '0')}:${String(minutes % 60).padStart(2, '0')}:${String(remainder).padStart(2, '0')}`;
+  }
   return `${String(minutes).padStart(2, '0')}:${String(remainder).padStart(2, '0')}`;
 }
 
@@ -111,7 +118,7 @@ function publishTimerState(): TimerSnapshot {
   const previousStatus = timerState.status;
   const snapshot = getTimerSnapshot();
   tray?.setTitle(
-    trayDiagnosticMode ? '' : formatTime(snapshot.remainingSeconds),
+    trayDiagnosticMode ? '' : formatTime(snapshot.remainingSeconds, snapshot.durationMinutes, snapshot.status !== 'ready'),
     { fontType: 'monospacedDigit' },
   );
 
@@ -426,6 +433,7 @@ function createMainWindow() {
     minHeight: windowHeight,
     maxHeight: windowHeight,
     resizable: false,
+    icon: path.join(app.getAppPath(), 'assets', 'app-icon.png'),
     maximizable: false,
     fullscreenable: false,
     webPreferences: {
@@ -568,7 +576,7 @@ function createTray() {
   tray = new Tray(icon);
   tray.setToolTip("Tomo's Nook timer");
   tray.setTitle(
-    diagnosticMode ? '' : formatTime(timerState.remainingSeconds),
+    diagnosticMode ? '' : formatTime(timerState.remainingSeconds, timerState.durationMinutes, timerState.status !== 'ready'),
     { fontType: 'monospacedDigit' },
   );
   tray.setIgnoreDoubleClickEvents(true);
@@ -580,6 +588,7 @@ registerTimerIpc();
 
 app.whenReady().then(() => {
   if (process.platform === 'darwin') {
+    app.dock.setIcon(nativeImage.createFromPath(path.join(app.getAppPath(), 'assets', 'app-icon.png')));
     createTray();
   }
   createMainWindow();

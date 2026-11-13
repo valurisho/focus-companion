@@ -12,6 +12,7 @@ const config: ForgeConfig = {
   packagerConfig: {
     asar: true,
     appBundleId: 'com.lisamontoya.focuscompanion',
+    icon: './assets/app-icon',
   },
   rebuildConfig: {},
   makers: [

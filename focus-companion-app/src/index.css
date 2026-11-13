@@ -325,6 +325,11 @@ button:focus-visible {
   line-height: 1.12;
 }
 
+.timer.timer-duration {
+  font-size: clamp(42px, 10vw, 60px);
+  letter-spacing: -.055em;
+}
+
 .session-detail {
   margin: 3px 0 17px;
   color: #767a74;

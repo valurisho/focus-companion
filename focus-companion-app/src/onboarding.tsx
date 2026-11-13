@@ -261,10 +261,23 @@ export function OnboardingFlow({
       setUserId(user.id);
       setAccountEmail(user.email ?? "");
       const profile = await getOrCreateProfile(user);
-      // Do NOT overwrite buddyLook or buddyName here — the user may have
-      // explicitly chosen them on the buddy page. For the onComplete path,
-      // finishOnboarding sets them from the profile. For the settings path,
-      // saveProfile reads the current state values (the user's choices).
+      const metadata = user.user_metadata ?? {};
+      const metadataBuddyName =
+        typeof metadata.buddy_name === "string" ? metadata.buddy_name.trim() : "";
+      const metadataBuddyLook = allowedLooks.includes(metadata.buddy_look)
+        ? (metadata.buddy_look as BuddyLook)
+        : null;
+      const restoredBuddyName =
+        !profile.username && profile.buddy_name === "Tomo" && metadataBuddyName
+          ? metadataBuddyName
+          : profile.buddy_name;
+      const restoredBuddyLook =
+        !profile.username && profile.buddy_look === "blob" && metadataBuddyLook
+          ? metadataBuddyLook
+          : profile.buddy_look;
+      // Restore saved buddy details before the setup form can write them back.
+      setBuddyName(restoredBuddyName?.trim() || "Tomo");
+      setBuddyLook(restoredBuddyLook);
       setUsername(profile.username ?? "");
       setSessionMinutes(profile.session_minutes);
       setDraftSessionHours(Math.floor(profile.session_minutes / 60));
@@ -396,7 +409,7 @@ export function OnboardingFlow({
     }
     setIsSubmitting(true);
     try {
-      const { error } = await supabase
+      const { data: savedProfile, error } = await supabase
         .from("profiles")
         .update({
           username: normalizedUsername,
@@ -405,19 +418,15 @@ export function OnboardingFlow({
           session_minutes: sessionMinutes,
           updated_at: new Date().toISOString(),
         })
-        .eq("id", userId);
+        .eq("id", userId)
+        .select(profileSelect)
+        .single();
       if (error) throw error;
+      if (!savedProfile) {
+        throw new Error("Your profile could not be saved. Please try again.");
+      }
 
-      onComplete(
-        {
-          id: userId,
-          username: normalizedUsername,
-          buddy_name: trimmedBuddyName,
-          buddy_look: buddyLook,
-          session_minutes: sessionMinutes,
-        },
-        accountEmail,
-      );
+      onComplete(savedProfile as UserProfile, accountEmail);
     } catch (error) {
       setErrorMessage(friendlyError(error));
     } finally {

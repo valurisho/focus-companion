@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client'
 import './index.css'
 import { supabase } from './utils/supabase'
 import { BuddyAvatar, OnboardingFlow, type BuddyLook, type UserProfile } from './onboarding'
+import topHatArtwork from '../assets/accessories/top-hat.svg'
 
 type ModalName = 'duration' | 'settings' | 'closet' | null
 type ClosetPage = 'grid' | 'try-on'
@@ -114,9 +115,16 @@ function formatDuration(totalMinutes: number) {
   return `${m} min`
 }
 
-function formatTime(seconds: number) {
-  const minutes = Math.floor(seconds / 60)
+function formatTime(seconds: number, durationMinutes = 0, includeSeconds = true) {
+  const hours = Math.floor(seconds / 3600)
+  const minutes = Math.floor((seconds % 3600) / 60)
   const remainder = seconds % 60
+  if (!includeSeconds) {
+    return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`
+  }
+  if (durationMinutes >= 60) {
+    return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(remainder).padStart(2, '0')}`
+  }
   return `${String(minutes).padStart(2, '0')}:${String(remainder).padStart(2, '0')}`
 }
 
@@ -229,8 +237,8 @@ function TimerPopup() {
             <span className="status-dot" />
             {statusLabel}
           </span>
-          <div className="timer-popup-time" role="timer" aria-label={`${formatTime(timer.remainingSeconds)} remaining`}>
-            {formatTime(timer.remainingSeconds)}
+          <div className="timer-popup-time" role="timer" aria-label={`${formatTime(timer.remainingSeconds, timer.durationMinutes, timer.status !== 'ready')} remaining`}>
+            {formatTime(timer.remainingSeconds, timer.durationMinutes, timer.status !== 'ready')}
           </div>
           <button className="timer-popup-quit-app" onClick={() => { void window.focusCompanion.quitApp() }}>
             Quit Tomo's Nook
@@ -332,6 +340,9 @@ function BuddyScene({ look, accessory, showBook = false }: { look: BuddyLook; ac
 function AccessoryDecoration({ accessory }: { accessory: ClosetAccessory }) {
   switch (accessory.slot) {
     case 'hat':
+      if (accessory.id === 'top_hat') {
+        return <image href={topHatArtwork} x="268" y="4" width="104" height="98" preserveAspectRatio="xMidYMid meet" />
+      }
       return <g className="buddy-accessory"><path d="m288 87 32-15 32 15-32 12z" /><path d="M299 92v13q21 9 42 0V92" /></g>
     case 'glasses':
       return <g className="buddy-accessory glasses-accessory"><circle cx="300" cy="139" r="12" /><circle cx="340" cy="139" r="12" /><path d="M312 139h16" /></g>
@@ -872,8 +883,8 @@ function App() {
                 <span className="status-dot" />
                 {status}
               </div>
-              <div className="timer" role="timer" aria-label={`${formatTime(secondsLeft)} remaining`}>
-                {formatTime(secondsLeft)}
+              <div className="timer" role="timer" aria-label={`${formatTime(secondsLeft, timer.durationMinutes)} remaining`}>
+                {formatTime(secondsLeft, timer.durationMinutes)}
               </div>
               <div
                 className="timer-progress"
@@ -896,7 +907,7 @@ function App() {
                   {isBreak
                     ? 'Take a few minutes away from your desk.'
                     : isPaused
-                      ? `Paused at ${formatTime(secondsLeft)}. Continue whenever you are ready.`
+                      ? `Paused at ${formatTime(secondsLeft, timer.durationMinutes)}. Continue whenever you are ready.`
                       : `${buddyName || 'Tomo'} is reading with you.`}
                 </p>
               </div>
@@ -942,11 +953,11 @@ function App() {
                 <span className="status-dot" />
                 {status}
               </div>
-              <div className="timer" role="timer" aria-label={`${formatTime(secondsLeft)} remaining`}>
-                {formatTime(secondsLeft)}
+              <div className="timer timer-duration" aria-label={`${formatDuration(timer.durationMinutes)} session`}>
+                {formatDuration(timer.durationMinutes)}
               </div>
               <p className="session-detail">
-                {sessionMinutes}-min session
+                Session length
                 <span aria-hidden="true"> · </span>
                 <button className="text-button" onClick={() => openDurationPicker()}>
                   Change

@@ -606,7 +606,9 @@ if (!gotSingleInstanceLock) {
 
   app.whenReady().then(() => {
     if (process.platform === 'darwin') {
-      app.dock.setIcon(nativeImage.createFromPath(path.join(app.getAppPath(), 'assets', 'app-icon.png')));
+      if (app.dock) {
+        app.dock.setIcon(nativeImage.createFromPath(path.join(app.getAppPath(), 'assets', 'app-icon.png')));
+      }
       createTray();
     }
     createMainWindow();

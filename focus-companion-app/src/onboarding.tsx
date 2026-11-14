@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState, type FormEvent, type KeyboardEvent } from "react";
 import type { User } from "@supabase/supabase-js";
 import { supabase } from "./utils/supabase";
+import welcomeMark from "../assets/welcome-mark.svg";
 
 export type BuddyLook = "blob" | "cat" | "owl";
 
@@ -260,10 +261,23 @@ export function OnboardingFlow({
       setUserId(user.id);
       setAccountEmail(user.email ?? "");
       const profile = await getOrCreateProfile(user);
-      // Do NOT overwrite buddyLook or buddyName here — the user may have
-      // explicitly chosen them on the buddy page. For the onComplete path,
-      // finishOnboarding sets them from the profile. For the settings path,
-      // saveProfile reads the current state values (the user's choices).
+      const metadata = user.user_metadata ?? {};
+      const metadataBuddyName =
+        typeof metadata.buddy_name === "string" ? metadata.buddy_name.trim() : "";
+      const metadataBuddyLook = allowedLooks.includes(metadata.buddy_look)
+        ? (metadata.buddy_look as BuddyLook)
+        : null;
+      const restoredBuddyName =
+        !profile.username && profile.buddy_name === "Tomo" && metadataBuddyName
+          ? metadataBuddyName
+          : profile.buddy_name;
+      const restoredBuddyLook =
+        !profile.username && profile.buddy_look === "blob" && metadataBuddyLook
+          ? metadataBuddyLook
+          : profile.buddy_look;
+      // Restore saved buddy details before the setup form can write them back.
+      setBuddyName(restoredBuddyName?.trim() || "Tomo");
+      setBuddyLook(restoredBuddyLook);
       setUsername(profile.username ?? "");
       setSessionMinutes(profile.session_minutes);
       setDraftSessionHours(Math.floor(profile.session_minutes / 60));
@@ -395,7 +409,7 @@ export function OnboardingFlow({
     }
     setIsSubmitting(true);
     try {
-      const { error } = await supabase
+      const { data: savedProfile, error } = await supabase
         .from("profiles")
         .update({
           username: normalizedUsername,
@@ -404,19 +418,15 @@ export function OnboardingFlow({
           session_minutes: sessionMinutes,
           updated_at: new Date().toISOString(),
         })
-        .eq("id", userId);
+        .eq("id", userId)
+        .select(profileSelect)
+        .single();
       if (error) throw error;
+      if (!savedProfile) {
+        throw new Error("Your profile could not be saved. Please try again.");
+      }
 
-      onComplete(
-        {
-          id: userId,
-          username: normalizedUsername,
-          buddy_name: trimmedBuddyName,
-          buddy_look: buddyLook,
-          session_minutes: sessionMinutes,
-        },
-        accountEmail,
-      );
+      onComplete(savedProfile as UserProfile, accountEmail);
     } catch (error) {
       setErrorMessage(friendlyError(error));
     } finally {
@@ -438,23 +448,20 @@ export function OnboardingFlow({
   }
 
   return (
-    <main className="app-shell onboarding-shell">
+    <main className={`app-shell onboarding-shell ${page === "welcome" ? "welcome-shell" : ""}`}>
       <section
         className="study-window onboarding-window"
         aria-label="Tomo's Nook setup"
       >
-        <header className="onboarding-window-bar">
-          <span>Tomo's Nook</span>
-        </header>
 
         <div className="onboarding-content">
           {page === "welcome" && (
             <section className="onboarding-card welcome-card">
-              <div className="welcome-buddy">
-                <BuddyAvatar look={buddyLook} className="onboarding-avatar" />
-              </div>
               <p className="eyebrow">A LITTLE COMPANION FOR YOUR FOCUS</p>
-              <h1>Tomo's Nook</h1>
+              <h1><span>Tomo's</span><span>Nook</span></h1>
+              <div className="welcome-buddy" aria-hidden="true">
+                <img className="welcome-mark" src={welcomeMark} alt="" />
+              </div>
               <p className="onboarding-copy">
                 Stay focused, finish sessions, and help your buddy grow along
                 the way.

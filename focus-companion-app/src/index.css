@@ -550,8 +550,9 @@ button:focus-visible {
 .max-focus-nudge {
   position: absolute;
   z-index: 4;
-  top: 70px;
-  right: 18px;
+  top: 64px;
+  left: 50%;
+  transform: translateX(-50%);
   width: min(290px, calc(100% - 36px));
   padding: 13px 14px 12px;
   border: 1.5px solid #343734;
@@ -1180,6 +1181,7 @@ body.desktop-pet-window {
 }
 
 .desktop-pet-avatar-drag {
+  position: relative;
   display: flex;
   align-items: center;
   padding: 0;
@@ -1191,6 +1193,17 @@ body.desktop-pet-window {
 .desktop-pet-avatar {
   width: 110px;
   height: 110px;
+}
+
+.desktop-pet-accessory-icon {
+  position: absolute;
+  top: 2px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 24px;
+  line-height: 1;
+  pointer-events: none;
+  user-select: none;
 }
 
 .desktop-pet-hide:focus-visible {
@@ -1598,4 +1611,62 @@ body.desktop-pet-window {
 
 .reward-view-closet:hover {
   color: var(--ink);
+}
+
+/* Max Focus Sprint 4 additions */
+.settings-section-divider {
+  height: 1px;
+  margin: 10px 0;
+  background: #e4e7e0;
+}
+
+.settings-section-label {
+  margin: 0 0 2px;
+  color: #8a9088;
+  font-size: 10px;
+  font-weight: 750;
+  letter-spacing: 0.06em;
+}
+
+.settings-section-description {
+  margin: 0 0 10px;
+  color: #8a9088;
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+.max-focus-session-active {
+  margin: 4px 0 0;
+  color: #708472;
+  font-size: 10px;
+  font-weight: 750;
+  letter-spacing: 0.04em;
+}
+
+.max-focus-threshold-options {
+  display: flex;
+  gap: 5px;
+}
+
+.threshold-option {
+  min-height: 28px;
+  padding: 0 9px;
+  border: 1.5px solid #c8ccc4;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--ink);
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color 0.1s, background 0.1s;
+}
+
+.threshold-option:hover {
+  border-color: #708472;
+}
+
+.threshold-option.selected {
+  border-color: #708472;
+  background: #708472;
+  color: #fff;
 }

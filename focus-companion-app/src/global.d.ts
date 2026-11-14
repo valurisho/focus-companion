@@ -21,6 +21,7 @@ interface Window {
     platform: NodeJS.Platform
     getTimerState: () => Promise<TimerSnapshot>
     setMaxFocusEnabled: (enabled: boolean) => Promise<void>
+    setMaxFocusThreshold: (seconds: number) => Promise<void>
     getPendingMaxFocusNudge: () => Promise<boolean>
     dismissMaxFocusNudge: () => Promise<void>
     startTimer: () => Promise<TimerSnapshot>

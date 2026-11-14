@@ -16,7 +16,7 @@ if (started) {
 }
 
 const initialDurationMinutes = 20;
-const maxFocusIdleThresholdSeconds = 3 * 60;
+let maxFocusIdleThresholdSeconds = 3 * 60;
 let focusDurationMinutes = initialDurationMinutes;
 const timerPopupSize = { width: 220, height: 140 };
 const trayDiagnosticMode = false;
@@ -78,16 +78,15 @@ function checkMaxFocusActivity(snapshot: TimerSnapshot) {
 
   const idleSeconds = powerMonitor.getSystemIdleTime();
   if (idleSeconds < maxFocusIdleThresholdSeconds) {
-    const wasNudged = maxFocusNudgeSent || maxFocusNudgePending;
+    // Activity resumed — allow a future nudge to fire once idle again,
+    // but do NOT clear maxFocusNudgePending: the nudge UI may still be
+    // visible and the user must dismiss it explicitly.
     maxFocusNudgeSent = false;
-    maxFocusNudgePending = false;
-    if (wasNudged && mainWindow && !mainWindow.isDestroyed()) {
-      mainWindow.webContents.send('max-focus:activity-resumed');
-    }
     return;
   }
 
-  if (maxFocusNudgeSent) return;
+  // Don't re-fire while a nudge is already showing or pending user dismissal.
+  if (maxFocusNudgeSent || maxFocusNudgePending) return;
 
   maxFocusNudgeSent = true;
   maxFocusNudgePending = true;
@@ -97,14 +96,12 @@ function checkMaxFocusActivity(snapshot: TimerSnapshot) {
 function showMaxFocusNudge() {
   const window = mainWindow && !mainWindow.isDestroyed() ? mainWindow : createMainWindow();
   if (window.isMinimized()) window.restore();
-
-  if (process.platform === 'darwin') {
-    app.focus({ steal: true });
-  }
-
-  window.show();
-  window.focus();
+  // Show without stealing keyboard focus — dock bounce + chime gets attention gently
+  window.showInactive();
   window.webContents.send('max-focus:idle-nudge');
+  if (process.platform === 'darwin' && app.dock) {
+    app.dock.bounce('informational');
+  }
 }
 
 function publishTimerState(): TimerSnapshot {
@@ -303,6 +300,15 @@ function registerTimerIpc() {
   ipcMain.handle('max-focus:dismiss-nudge', (event) => {
     if (!isTrustedRenderer(event)) throw new Error('Untrusted renderer dismissed a Max Focus nudge.');
     maxFocusNudgePending = false;
+  });
+
+  ipcMain.handle('max-focus:set-threshold', (event, seconds: unknown) => {
+    if (!isTrustedRenderer(event)) throw new Error('Untrusted renderer changed Max Focus threshold.');
+    if (seconds !== 180 && seconds !== 300 && seconds !== 600) {
+      throw new Error('Max Focus threshold must be 180, 300, or 600 seconds.');
+    }
+    maxFocusIdleThresholdSeconds = seconds;
+    return undefined;
   });
 
   ipcMain.handle('timer:start', (event) => {
@@ -557,6 +563,7 @@ function toggleTimerPopup() {
 }
 
 function createTray() {
+  if (tray && !tray.isDestroyed()) return;
   const iconPath = path.join(app.getAppPath(), 'assets', 'focusCompanionTemplate.png');
   const diagnosticMode = trayDiagnosticMode;
   const sourceIcon = diagnosticMode
@@ -578,21 +585,33 @@ function createTray() {
 
 registerTimerIpc();
 
-app.whenReady().then(() => {
-  if (process.platform === 'darwin') {
-    createTray();
-  }
-  createMainWindow();
-});
-
-app.on('window-all-closed', () => {
-  if (process.platform !== 'darwin') {
-    app.quit();
-  }
-});
-
-app.on('activate', () => {
-  if (!mainWindow || mainWindow.isDestroyed()) {
+// Enforce a single running instance. If a second launch is attempted,
+// quit it immediately and show/focus the existing window instead.
+const gotSingleInstanceLock = app.requestSingleInstanceLock();
+if (!gotSingleInstanceLock) {
+  app.quit();
+} else {
+  app.on('second-instance', () => {
+    // A second launch was attempted — bring the existing window forward.
     createMainWindow();
-  }
-});
+  });
+
+  app.whenReady().then(() => {
+    if (process.platform === 'darwin') {
+      createTray();
+    }
+    createMainWindow();
+  });
+
+  app.on('window-all-closed', () => {
+    if (process.platform !== 'darwin') {
+      app.quit();
+    }
+  });
+
+  app.on('activate', () => {
+    if (!mainWindow || mainWindow.isDestroyed()) {
+      createMainWindow();
+    }
+  });
+}

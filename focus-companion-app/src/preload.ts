@@ -4,6 +4,7 @@ contextBridge.exposeInMainWorld('focusCompanion', {
   platform: process.platform,
   getTimerState: () => ipcRenderer.invoke('timer:get-state'),
   setMaxFocusEnabled: (enabled: boolean) => ipcRenderer.invoke('max-focus:set-enabled', enabled),
+  setMaxFocusThreshold: (seconds: number) => ipcRenderer.invoke('max-focus:set-threshold', seconds),
   getPendingMaxFocusNudge: () => ipcRenderer.invoke('max-focus:get-pending-nudge'),
   dismissMaxFocusNudge: () => ipcRenderer.invoke('max-focus:dismiss-nudge'),
   startTimer: () => ipcRenderer.invoke('timer:start'),

@@ -284,6 +284,11 @@ function DesktopPet() {
       </button>
       <div className="desktop-pet-avatar-drag" role="img" aria-label={appearance.buddyName}>
         <BuddyAvatar look={appearance.look} className="desktop-pet-avatar" />
+        {appearance.accessory && (
+          <span className="desktop-pet-accessory-icon" aria-hidden="true">
+            {appearance.accessory.icon}
+          </span>
+        )}
       </div>
     </main>
   )
@@ -372,10 +377,18 @@ function App() {
     window.localStorage.getItem('tomo.max-focus-consent-v2') === 'accepted'
     && window.localStorage.getItem('tomo.max-focus.enabled') === 'true'
   ))
+  const [maxFocusThreshold, setMaxFocusThreshold] = useState<180 | 300 | 600>(() => {
+    const stored = window.localStorage.getItem('tomo.max-focus.threshold')
+    return stored === '300' ? 300 : stored === '600' ? 600 : 180
+  })
+  const [maxFocusSoundEnabled, setMaxFocusSoundEnabled] = useState(() =>
+    window.localStorage.getItem('tomo.max-focus.sound') !== 'false'
+  )
   const [maxFocusNudgeVisible, setMaxFocusNudgeVisible] = useState(false)
   const [maxFocusConsentOpen, setMaxFocusConsentOpen] = useState(false)
-  const [desktopPetEnabled, setDesktopPetEnabled] = useState(() => window.localStorage.getItem('tomo.desktop-pet.enabled') === 'true')
+  const [desktopPetEnabled, setDesktopPetEnabled] = useState(false)
   const maxFocusAudioContext = useRef<AudioContext | null>(null)
+  const maxFocusSoundEnabledRef = useRef(maxFocusSoundEnabled)
   const [authEmail, setAuthEmail] = useState('')
   const [buddyLook, setBuddyLook] = useState<BuddyLook>('blob')
   const [profileMessage, setProfileMessage] = useState('')
@@ -413,6 +426,9 @@ function App() {
     setClosetError('')
     sessionCapture.current = null
     lastTimerStatus.current = 'ready'
+    setDesktopPetEnabled(
+      window.localStorage.getItem(`tomo.desktop-pet.enabled.${nextProfile.id}`) === 'true'
+    )
     void window.focusCompanion.getTimerState().then((current) => {
       if (current.status === 'ready' && current.durationMinutes !== nextProfile.session_minutes) {
         return window.focusCompanion.setTimerDuration(nextProfile.session_minutes)
@@ -428,8 +444,12 @@ function App() {
         ? isBreak ? 'BREAK PAUSED' : 'PAUSED'
         : isBreak ? 'BREAK READY' : 'READY TO FOCUS'
 
+  const thresholdLabel = maxFocusThreshold === 180 ? '3 min' : maxFocusThreshold === 300 ? '5 min' : '10 min'
+  const thresholdLabelLong = maxFocusThreshold === 180 ? '3 minutes' : maxFocusThreshold === 300 ? '5 minutes' : '10 minutes'
+
   const showMaxFocusNudge = () => {
     setMaxFocusNudgeVisible(true)
+    if (!maxFocusSoundEnabledRef.current) return
     if (typeof AudioContext === 'undefined') return
 
     const audioContext = maxFocusAudioContext.current ?? new AudioContext()
@@ -451,7 +471,10 @@ function App() {
     oscillator.stop(now + 0.29)
   }
 
-  const hideMaxFocusNudge = () => setMaxFocusNudgeVisible(false)
+  useEffect(() => {
+    maxFocusSoundEnabledRef.current = maxFocusSoundEnabled
+    window.localStorage.setItem('tomo.max-focus.sound', String(maxFocusSoundEnabled))
+  }, [maxFocusSoundEnabled])
 
   useEffect(() => {
     window.localStorage.setItem('tomo.max-focus.enabled', String(maxFocusEnabled))
@@ -459,16 +482,20 @@ function App() {
   }, [maxFocusEnabled])
 
   useEffect(() => {
-    window.localStorage.setItem('tomo.desktop-pet.enabled', String(desktopPetEnabled))
-    void window.focusCompanion.setDesktopPetVisible(
-      desktopPetEnabled && Boolean(profile) && timer.status === 'running',
-    )
-  }, [desktopPetEnabled, profile?.id, timer.status])
+    window.localStorage.setItem('tomo.max-focus.threshold', String(maxFocusThreshold))
+    void window.focusCompanion.setMaxFocusThreshold(maxFocusThreshold)
+  }, [maxFocusThreshold])
+
+  useEffect(() => {
+    if (profile) {
+      window.localStorage.setItem(`tomo.desktop-pet.enabled.${profile.id}`, String(desktopPetEnabled))
+    }
+    void window.focusCompanion.setDesktopPetVisible(desktopPetEnabled && Boolean(profile))
+  }, [desktopPetEnabled, profile?.id])
 
   useEffect(() => {
     let active = true
     const unsubscribeNudge = window.focusCompanion.onMaxFocusNudge(showMaxFocusNudge)
-    const unsubscribeActivity = window.focusCompanion.onMaxFocusActivity(hideMaxFocusNudge)
 
     void window.focusCompanion.getPendingMaxFocusNudge().then((pending) => {
       if (active && pending) setMaxFocusNudgeVisible(true)
@@ -477,7 +504,6 @@ function App() {
     return () => {
       active = false
       unsubscribeNudge()
-      unsubscribeActivity()
     }
   }, [])
 
@@ -522,6 +548,11 @@ function App() {
         setClosetError('')
         sessionCapture.current = null
         lastTimerStatus.current = 'ready'
+        // Clear device-local settings that are not per-account in localStorage.
+        // Max Focus consent must be cleared so the next user sees the consent modal.
+        window.localStorage.removeItem('tomo.max-focus-consent-v2')
+        setMaxFocusEnabled(false)
+        setDesktopPetEnabled(false)
       }
     })
     return () => subscription.unsubscribe()
@@ -738,6 +769,9 @@ function App() {
     setClosetError('')
     sessionCapture.current = null
     lastTimerStatus.current = 'ready'
+    window.localStorage.removeItem('tomo.max-focus-consent-v2')
+    setMaxFocusEnabled(false)
+    setDesktopPetEnabled(false)
   }
 
   const ownedAccessoryIds = new Set(ownedAccessories.map((owned) => owned.accessory_id))
@@ -795,7 +829,7 @@ function App() {
         {maxFocusNudgeVisible && maxFocusEnabled && isRunning && !isBreak && (
           <aside className="max-focus-nudge" role="alert" aria-live="assertive">
             <strong>Still focusing?</strong>
-            <p>There hasn’t been keyboard or pointer activity for 3 minutes.</p>
+            <p>There hasn’t been keyboard or pointer activity for {thresholdLabel}.</p>
             <div className="max-focus-nudge-actions">
               <button
                 type="button"
@@ -883,6 +917,9 @@ function App() {
                 <span className="status-dot" />
                 {status}
               </div>
+              {maxFocusEnabled && isRunning && !isBreak && (
+                <p className="max-focus-session-active" aria-label="Max Focus is active">Max Focus active</p>
+              )}
               <div className="timer" role="timer" aria-label={`${formatTime(secondsLeft, timer.durationMinutes)} remaining`}>
                 {formatTime(secondsLeft, timer.durationMinutes)}
               </div>
@@ -995,7 +1032,7 @@ function App() {
                 <span />
               </button>
               <span className="max-focus-label">Max Focus</span>
-            <span className="max-focus-description">{maxFocusEnabled ? 'On · 3 min idle' : 'Off'}</span>
+            <span className="max-focus-description">{maxFocusEnabled ? `On · ${thresholdLabel} idle` : 'Off'}</span>
             </div>
             <div className="footer-actions">
               <button className="secondary-button" onClick={() => { setIsEditingName(false); setModal('settings') }}>Settings</button>
@@ -1120,6 +1157,54 @@ function App() {
                   </div>
                 </div>
                 {isRunning && <p className="settings-running-note">Pause the timer to change session length.</p>}
+                <div className="settings-section-divider" />
+                <p className="settings-section-label">MAX FOCUS</p>
+                <p className="settings-section-description">Monitors keyboard and pointer activity. After {thresholdLabelLong} of inactivity during a focus session, shows a reminder.</p>
+                <div className="settings-row">
+                  <span className="settings-row-title">Enable Max Focus</span>
+                  <button
+                    className={`switch ${maxFocusEnabled ? 'is-on' : ''}`}
+                    type="button"
+                    role="switch"
+                    aria-checked={maxFocusEnabled}
+                    aria-label={`Max Focus ${maxFocusEnabled ? 'on' : 'off'}`}
+                    onClick={toggleMaxFocus}
+                  >
+                    <span />
+                  </button>
+                </div>
+                {maxFocusEnabled && (
+                  <>
+                    <div className="settings-row">
+                      <span className="settings-row-title">Idle reminder after</span>
+                      <div className="max-focus-threshold-options">
+                        {([180, 300, 600] as const).map((t) => (
+                          <button
+                            key={t}
+                            type="button"
+                            className={`threshold-option ${maxFocusThreshold === t ? 'selected' : ''}`}
+                            onClick={() => setMaxFocusThreshold(t)}
+                          >
+                            {t === 180 ? '3 min' : t === 300 ? '5 min' : '10 min'}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                    <div className="settings-row">
+                      <span className="settings-row-title">Reminder sound</span>
+                      <button
+                        className={`switch ${maxFocusSoundEnabled ? 'is-on' : ''}`}
+                        type="button"
+                        role="switch"
+                        aria-checked={maxFocusSoundEnabled}
+                        aria-label={`Reminder sound ${maxFocusSoundEnabled ? 'on' : 'off'}`}
+                        onClick={() => setMaxFocusSoundEnabled((v) => !v)}
+                      >
+                        <span />
+                      </button>
+                    </div>
+                  </>
+                )}
                 {profileMessage && <p className="profile-message" role="status">{profileMessage}</p>}
                 <div className="settings-account-actions">
                   <button className="text-button" onClick={() => { void signOut() }}>Sign out</button>
@@ -1282,8 +1367,9 @@ function App() {
             <h2 id="max-focus-consent-title">Turn on Max Focus?</h2>
             <p id="max-focus-consent-description" className="modal-description">
               During a focus session, Tomo’s Nook checks for keyboard or pointer activity anywhere on your Mac.
-              After 3 minutes without activity, it brings its window to the front, plays a short chime, and asks if you’re still focusing.
+              After your selected period of inactivity, it shows a reminder asking if you&apos;re still focusing and can play a short chime.
             </p>
+            <p className="max-focus-privacy-note">You can change the idle reminder time in Settings.</p>
             <p className="max-focus-privacy-note">It doesn’t record your screen or use your camera.</p>
             <div className="modal-actions max-focus-consent-actions">
               <button className="secondary-button" onClick={() => setMaxFocusConsentOpen(false)}>Deny</button>

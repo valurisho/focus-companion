@@ -579,7 +579,6 @@ export function OnboardingFlow({
             <section className="onboarding-card auth-card">
               <StepMarker step={2} />
               <div className="auth-heading">
-                <BuddyAvatar look={buddyLook} className="auth-avatar" />
                 <div>
                   <p className="eyebrow">YOUR BUDDY IS WAITING</p>
                   <h1>

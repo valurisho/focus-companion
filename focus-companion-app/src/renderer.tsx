@@ -1045,7 +1045,7 @@ function App() {
       {modal && (
         <div className="modal-backdrop" onMouseDown={(event) => event.target === event.currentTarget && setModal(null)}>
           <section className={`modal-card ${modal === 'closet' ? 'closet-modal' : ''}`} role="dialog" aria-modal="true" aria-labelledby="modal-title">
-            {modal === 'settings' && (
+            {(modal === 'settings' || modal === 'closet') && (
               <button className="modal-close" aria-label="Close dialog" onClick={() => setModal(null)}>×</button>
             )}
             {modal === 'duration' && (
@@ -1087,7 +1087,6 @@ function App() {
             )}
             {modal === 'settings' && (
               <>
-                <p className="eyebrow">YOUR PREFERENCES</p>
                 <h2 id="modal-title">Settings</h2>
                 <div className="settings-row desktop-pet-setting">
                   <div>
@@ -1214,13 +1213,14 @@ function App() {
             {modal === 'closet' && (
               <div className="closet-view">
                 <div className="closet-heading">
-                  <button
-                    className="closet-back-button"
-                    onClick={() => closetPage === 'try-on' ? setClosetPage('grid') : setModal(null)}
-                  >
-                    {closetPage === 'try-on' ? '‹ Closet' : '‹ Back'}
-                  </button>
-                  <h2 id="modal-title">{closetPage === 'try-on' ? 'Try on' : 'Closet'}</h2>
+                  <div className="closet-heading-title">
+                    <h2 id="modal-title">{closetPage === 'try-on' ? 'Try on' : 'Closet'}</h2>
+                    {closetPage === 'try-on' && (
+                      <button className="closet-back-button" onClick={() => setClosetPage('grid')}>
+                        ‹ Closet
+                      </button>
+                    )}
+                  </div>
                   <span className="closet-count">
                     {closetPage === 'try-on' && earnedAccessories.length > 0
                       ? `${selectedTryOnIndex + 1} of ${earnedAccessories.length}`
@@ -1280,23 +1280,25 @@ function App() {
                         <p>Accessories will show up here when they are added to the catalog.</p>
                       </div>
                     )}
-                    <button
-                      className="closet-primary-action"
-                      onClick={() => {
-                        if (earnedAccessories.length > 0) {
-                          setSelectedAccessoryId(equippedAccessory?.id ?? earnedAccessories[0]?.id ?? null)
-                          setClosetPage('try-on')
-                        } else {
-                          setModal(null)
-                          startOrResume()
-                        }
-                      }}
-                    >
-                      {earnedAccessories.length > 0 ? 'Browse & equip' : 'Start a session'}
-                    </button>
-                    {earnedAccessories.length === 0 && closetAccessories.length > 0 && (
-                      <p className="closet-empty-hint">Finish a focus session to earn your first accessory for {buddyName || 'Tomo'}.</p>
-                    )}
+                    <div className="closet-footer">
+                      {earnedAccessories.length === 0 && closetAccessories.length > 0 && (
+                        <p className="closet-empty-hint">Finish a focus session to earn your first accessory for {buddyName || 'Tomo'}.</p>
+                      )}
+                      <button
+                        className="closet-primary-action"
+                        onClick={() => {
+                          if (earnedAccessories.length > 0) {
+                            setSelectedAccessoryId(equippedAccessory?.id ?? earnedAccessories[0]?.id ?? null)
+                            setClosetPage('try-on')
+                          } else {
+                            setModal(null)
+                            startOrResume()
+                          }
+                        }}
+                      >
+                        {earnedAccessories.length > 0 ? 'Browse & equip' : 'Start a session'}
+                      </button>
+                    </div>
                   </>
                 )}
 

@@ -1510,6 +1510,9 @@ body.desktop-pet-window {
 .try-on-arrow:disabled { opacity: .35; cursor: default; }
 .try-on-buddy { position: relative; display: grid; min-height: 360px; place-items: center; border: 0; border-radius: 22px; background: #f3f3ef; }
 .try-on-avatar { width: min(250px, 100%); height: auto; }
+.try-on-hat-art { position: absolute; z-index: 1; left: 50%; height: auto; transform: translateX(-50%); pointer-events: none; }
+.wizard-hat-art { top: 8px; width: 80px; }
+.cloud-hat-art { top: 25px; width: 180px; }
 .try-on-icon { position: absolute; top: 14px; display: grid; width: 44px; height: 44px; place-items: center; border: 1.5px solid #343734; border-radius: 12px; background: #deded9; font-size: 24px; }
 .try-on-name { margin: 9px 0 2px; font-size: 16px; text-align: center; }
 .try-on-earned { min-height: 15px; margin: 0; color: #666b64; font-size: 10px; text-align: center; }

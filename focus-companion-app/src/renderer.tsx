@@ -4,6 +4,8 @@ import './index.css'
 import { supabase } from './utils/supabase'
 import { BuddyAvatar, OnboardingFlow, type BuddyLook, type UserProfile } from './onboarding'
 import topHatArtwork from '../assets/accessories/top-hat.svg'
+import starlightWizardHatArtwork from '../assets/accessories/starlight-wizard-hat.svg'
+import cloudHatArtwork from '../assets/accessories/cloud-hat.svg'
 
 type ModalName = 'duration' | 'settings' | 'closet' | null
 type ClosetPage = 'grid' | 'try-on'
@@ -347,6 +349,12 @@ function AccessoryDecoration({ accessory }: { accessory: ClosetAccessory }) {
     case 'hat':
       if (accessory.id === 'top_hat') {
         return <image href={topHatArtwork} x="268" y="4" width="104" height="98" preserveAspectRatio="xMidYMid meet" />
+      }
+      if (accessory.id === 'starlight_wizard_hat') {
+        return <image href={starlightWizardHatArtwork} x="290" y="-4" width="60" height="100" preserveAspectRatio="xMidYMid meet" />
+      }
+      if (accessory.id === 'cloud_hat') {
+        return <image href={cloudHatArtwork} x="270" y="31" width="100" height="64" preserveAspectRatio="xMidYMid meet" />
       }
       return <g className="buddy-accessory"><path d="m288 87 32-15 32 15-32 12z" /><path d="M299 92v13q21 9 42 0V92" /></g>
     case 'glasses':
@@ -791,6 +799,11 @@ function App() {
 
   const selectedTryOnIndex = Math.max(0, earnedAccessories.findIndex((accessory) => accessory.id === selectedAccessoryId))
   const selectedTryOnAccessory = earnedAccessories[selectedTryOnIndex]
+  const selectedTryOnHatArtwork = selectedTryOnAccessory?.id === 'starlight_wizard_hat'
+    ? { src: starlightWizardHatArtwork, className: 'wizard-hat-art' }
+    : selectedTryOnAccessory?.id === 'cloud_hat'
+      ? { src: cloudHatArtwork, className: 'cloud-hat-art' }
+      : null
 
   const equipAccessory = async (accessoryId: string | null) => {
     setIsEquippingAccessory(true)
@@ -1317,7 +1330,11 @@ function App() {
                         >‹</button>
                         <div className="try-on-buddy">
                           <BuddyAvatar look={buddyLook} className="try-on-avatar" />
-                          <span className="try-on-icon">{selectedTryOnAccessory.icon || '✦'}</span>
+                          {selectedTryOnHatArtwork ? (
+                            <img className={`try-on-hat-art ${selectedTryOnHatArtwork.className}`} src={selectedTryOnHatArtwork.src} alt="" />
+                          ) : (
+                            <span className="try-on-icon">{selectedTryOnAccessory.icon || '✦'}</span>
+                          )}
                         </div>
                         <button
                           className="try-on-arrow"

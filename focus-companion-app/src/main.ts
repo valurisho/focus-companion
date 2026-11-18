@@ -377,6 +377,10 @@ function registerTimerIpc() {
       throw new Error('Only the desktop pet can close its own window.');
     }
     desktopPetWindow.close();
+    // Notify the main renderer so it can sync desktopPetEnabled state to OFF.
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send('pet:closed-by-user');
+    }
   });
 
   ipcMain.handle('pet:set-appearance', (event, value: unknown) => {

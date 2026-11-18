@@ -516,6 +516,13 @@ function App() {
   }, [])
 
   useEffect(() => {
+    const unsubscribe = window.focusCompanion.onDesktopPetClosed(() => {
+      setDesktopPetEnabled(false)
+    })
+    return unsubscribe
+  }, [])
+
+  useEffect(() => {
     if (!maxFocusEnabled || timer.status !== 'running' || timer.mode !== 'focus') {
       setMaxFocusNudgeVisible(false)
     }
@@ -917,7 +924,7 @@ function App() {
                     <button className="extend-button" onClick={() => { void window.focusCompanion.startFocusTimer(20) }}>
                       Extend 20 Minutes
                     </button>
-                    <button className="extend-button" onClick={() => { void window.focusCompanion.setTimerDuration(profile.session_minutes) }}>
+                    <button className="extend-button" onClick={() => { void window.focusCompanion.startFocusTimer(profile.session_minutes) }}>
                       Skip break
                     </button>
                   </>

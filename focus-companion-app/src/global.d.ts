@@ -42,5 +42,6 @@ interface Window {
     setDesktopPetAppearance: (appearance: DesktopPetAppearance) => Promise<void>
     getDesktopPetAppearance: () => Promise<DesktopPetAppearance>
     onDesktopPetAppearance: (callback: (appearance: DesktopPetAppearance) => void) => () => void
+    onDesktopPetClosed: (callback: () => void) => () => void
   }
 }

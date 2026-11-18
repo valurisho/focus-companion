@@ -45,4 +45,9 @@ contextBridge.exposeInMainWorld('focusCompanion', {
     ipcRenderer.on('pet:appearance-updated', listener);
     return () => ipcRenderer.removeListener('pet:appearance-updated', listener);
   },
+  onDesktopPetClosed: (callback: () => void) => {
+    const listener = () => callback();
+    ipcRenderer.on('pet:closed-by-user', listener);
+    return () => ipcRenderer.removeListener('pet:closed-by-user', listener);
+  },
 });

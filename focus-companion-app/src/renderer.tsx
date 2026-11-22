@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState, type KeyboardEvent } from 're
 import { createRoot } from 'react-dom/client'
 import './index.css'
 import { supabase } from './utils/supabase'
-import { BuddyAvatar, OnboardingFlow, type BuddyLook, type UserProfile } from './onboarding'
+import { BUDDY_NAME_MAX_LENGTH, BuddyAvatar, OnboardingFlow, type BuddyLook, type UserProfile } from './onboarding'
 import topHatArtwork from '../assets/accessories/top-hat.svg'
 import starlightWizardHatArtwork from '../assets/accessories/starlight-wizard-hat.svg'
 import cloudHatArtwork from '../assets/accessories/cloud-hat.svg'
@@ -296,7 +296,14 @@ function DesktopPet() {
   )
 }
 
-function BuddyScene({ look, accessory, showBook = false, nightMode, onToggleNightMode }: { look: BuddyLook; accessory?: ClosetAccessory; showBook?: boolean; nightMode: boolean; onToggleNightMode: () => void }) {
+function BuddyScene({ look, buddyName, accessory, showBook = false, nightMode, onToggleNightMode }: { look: BuddyLook; buddyName: string; accessory?: ClosetAccessory; showBook?: boolean; nightMode: boolean; onToggleNightMode: () => void }) {
+  // The name pillow grows with the name and leans on the right arm of the couch.
+  // Names saved before the 10-character limit are cut short here so they still fit.
+  const pillowName = buddyName.slice(0, BUDDY_NAME_MAX_LENGTH)
+  const pillowWidth = Math.min(108, Math.max(66, pillowName.length * 10 + 28))
+  const pillowFontSize = pillowName.length > 8 ? 19 - (pillowName.length - 8) : 19
+  const pillowX = 381
+  const pillowCenterX = pillowX + pillowWidth / 2
   return (
     <svg
       className="buddy-scene"
@@ -317,14 +324,8 @@ function BuddyScene({ look, accessory, showBook = false, nightMode, onToggleNigh
           <feTurbulence type="fractalNoise" baseFrequency="0.5" numOctaves="2" seed="11" result="fuzz" />
           <feDisplacementMap in="SourceGraphic" in2="fuzz" scale="7" xChannelSelector="R" yChannelSelector="G" />
         </filter>
-        <radialGradient id="scene-lamp-glow">
-          <stop offset="0" stopColor="#f6e3a6" stopOpacity=".55" />
-          <stop offset=".55" stopColor="#f6e3a6" stopOpacity=".16" />
-          <stop offset="1" stopColor="#f6e3a6" stopOpacity="0" />
-        </radialGradient>
       </defs>
 
-      {nightMode && <ellipse cx="572" cy="128" rx="210" ry="170" fill="url(#scene-lamp-glow)" aria-hidden="true" />}
 
       <g className="scene-window" filter="url(#scene-hand-drawn)">
         <rect className="window-pane" x="46" y="38" width="104" height="88" rx="3" />
@@ -401,6 +402,11 @@ function BuddyScene({ look, accessory, showBook = false, nightMode, onToggleNigh
         <path className="sofa-pleats" d="M179.4 226v9M202.9 226v9M226.3 226v9M249.7 226v9M273.1 226v9M296.6 226v9M320.0 226v9M343.4 226v9M366.9 226v9M390.3 226v9M413.7 226v9M437.1 226v9M460.6 226v9" />
         <path d="M150 232Q146 190 152 162Q156 142 176 141Q198 142 202 162Q206 194 202 232Q176 240 150 232Z" />
         <path d="M490 232Q494 190 488 162Q484 142 464 141Q442 142 438 162Q434 194 438 232Q464 240 490 232Z" />
+      </g>
+      <g className="scene-pillow" transform={`rotate(7 ${pillowCenterX} 154)`}>
+        <rect className="pillow-body" x={pillowX} y="131" width={pillowWidth} height="46" rx="15" filter="url(#scene-hand-drawn)" />
+        <rect className="pillow-stitch" x={pillowX + 6} y="137" width={pillowWidth - 12} height="34" rx="10" />
+        <text className="pillow-name" x={pillowCenterX} y="155" fontSize={pillowFontSize} textAnchor="middle" dominantBaseline="central">{pillowName}</text>
       </g>
       <g className="scene-buddy" filter="url(#scene-hand-drawn)">
         {look === 'cat' && <path d="m270 118 7-35 27 23m28 0 27-23 7 35" />}
@@ -834,7 +840,7 @@ function App() {
     }
   }
   const saveName = async () => {
-    const trimmed = draftBuddyName.trim()
+    const trimmed = draftBuddyName.trim().slice(0, BUDDY_NAME_MAX_LENGTH)
     if (!trimmed) return
     if (profile) {
       const { error } = await supabase
@@ -1017,7 +1023,7 @@ function App() {
               </div>
             </div>
             <div className="scene-frame result-scene">
-              <BuddyScene look={buddyLook} accessory={equippedAccessory} nightMode={nightMode} onToggleNightMode={toggleNightMode} />
+              <BuddyScene look={buddyLook} buddyName={buddyName || 'Tomo'} accessory={equippedAccessory} nightMode={nightMode} onToggleNightMode={toggleNightMode} />
             </div>
             </>
           ) : isTimedSession ? (
@@ -1061,7 +1067,7 @@ function App() {
                 </p>
               </div>
               <div className="scene-frame session-scene">
-                <BuddyScene look={buddyLook} accessory={equippedAccessory} showBook={isRunning && !isBreak} nightMode={nightMode} onToggleNightMode={toggleNightMode} />
+                <BuddyScene look={buddyLook} buddyName={buddyName || 'Tomo'} accessory={equippedAccessory} showBook={isRunning && !isBreak} nightMode={nightMode} onToggleNightMode={toggleNightMode} />
               </div>
             </>
           ) : !hasValidDuration ? (
@@ -1078,11 +1084,10 @@ function App() {
                 </button>
               </div>
               <div className="buddy-caption">
-                <h2>{buddyName || 'Tomo'}</h2>
                 <p>Set a focus duration to begin.</p>
               </div>
               <div className="scene-frame">
-                <BuddyScene look={buddyLook} accessory={equippedAccessory} nightMode={nightMode} onToggleNightMode={toggleNightMode} />
+                <BuddyScene look={buddyLook} buddyName={buddyName || 'Tomo'} accessory={equippedAccessory} nightMode={nightMode} onToggleNightMode={toggleNightMode} />
               </div>
             </>
           ) : (
@@ -1101,15 +1106,10 @@ function App() {
                 <button className="start-button" onClick={primaryAction}>Start</button>
               </div>
               <div className="buddy-caption">
-                <h2>{buddyName || 'Tomo'}</h2>
-                <p>
-                  {equippedAccessory
-                    ? `Wearing ${equippedAccessory.name} — complete sessions to earn more`
-                    : 'Finish a focus session to earn your first accessory'}
-                </p>
+                {!equippedAccessory && <p>Finish a focus session to earn your first accessory</p>}
               </div>
               <div className="scene-frame">
-                <BuddyScene look={buddyLook} accessory={equippedAccessory} nightMode={nightMode} onToggleNightMode={toggleNightMode} />
+                <BuddyScene look={buddyLook} buddyName={buddyName || 'Tomo'} accessory={equippedAccessory} nightMode={nightMode} onToggleNightMode={toggleNightMode} />
               </div>
             </>
           )}
@@ -1217,7 +1217,7 @@ function App() {
                         value={draftBuddyName}
                         onChange={(e) => setDraftBuddyName(e.target.value)}
                         onKeyDown={(e) => { if (e.key === 'Enter') saveName(); if (e.key === 'Escape') setIsEditingName(false) }}
-                        maxLength={20}
+                        maxLength={BUDDY_NAME_MAX_LENGTH}
                         autoFocus
                       />
                     </>

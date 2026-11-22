@@ -5,6 +5,9 @@ import welcomeMark from "../assets/welcome-mark.svg";
 
 export type BuddyLook = "blob" | "cat" | "owl";
 
+/** Buddy names are stitched on a pillow in the room, so they stay short. */
+export const BUDDY_NAME_MAX_LENGTH = 10;
+
 export interface UserProfile {
   id: string;
   username: string | null;
@@ -67,7 +70,7 @@ async function getOrCreateProfile(user: User): Promise<UserProfile> {
     .from("profiles")
     .insert({
       id: user.id,
-      buddy_name: requestedName.slice(0, 20) || "Tomo",
+      buddy_name: requestedName.slice(0, BUDDY_NAME_MAX_LENGTH) || "Tomo",
       buddy_look: look,
       session_minutes: 20,
     })
@@ -350,7 +353,7 @@ export function OnboardingFlow({
           password,
           options: {
             data: {
-              buddy_name: buddyName.trim() || "Tomo",
+              buddy_name: buddyName.trim().slice(0, BUDDY_NAME_MAX_LENGTH) || "Tomo",
               buddy_look: buddyLook,
             },
           },
@@ -389,7 +392,7 @@ export function OnboardingFlow({
     setErrorMessage("");
     setStatusMessage("");
     const normalizedUsername = username.trim().toLowerCase();
-    const trimmedBuddyName = buddyName.trim();
+    const trimmedBuddyName = buddyName.trim().slice(0, BUDDY_NAME_MAX_LENGTH);
 
     if (!userId) {
       setErrorMessage("Please log in again to finish setting up your profile.");
@@ -537,11 +540,11 @@ export function OnboardingFlow({
                 className="onboarding-input"
                 value={buddyName}
                 onChange={(event) => setBuddyName(event.target.value)}
-                maxLength={20}
+                maxLength={BUDDY_NAME_MAX_LENGTH}
                 autoComplete="off"
               />
               <p className="field-hint">
-                You can change this later in Settings.
+                Up to {BUDDY_NAME_MAX_LENGTH} characters. You can change this later in Settings.
               </p>
               {!buddyName.trim() ? (
                 <p className="form-message error" role="alert">

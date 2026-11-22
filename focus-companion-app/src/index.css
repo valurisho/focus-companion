@@ -444,7 +444,7 @@ button:focus-visible {
   min-height: 150px;
   aspect-ratio: 640 / 300;
   margin: 0 -26px;
-  overflow: hidden;
+  overflow: visible;
   border: 0;
   border-radius: 0;
   background: transparent;
@@ -470,8 +470,36 @@ button:focus-visible {
   display: block;
   width: 100%;
   height: 100%;
-  overflow: visible;
+  overflow: hidden;
 }
+
+/* Lamp light: a wide, soft pool centred on the shade (572,97 in the 640x300 scene)
+   that fades out over many stops, so it spills onto the wall with no hard edge.
+   The window's rounded edge is the only thing that clips it. */
+.scene-frame::after {
+  position: absolute;
+  z-index: 1;
+  top: calc(97 / 300 * 100%);
+  left: calc(572 / 640 * 100%);
+  width: 720px;
+  height: 720px;
+  border-radius: 50%;
+  background: radial-gradient(circle closest-side,
+    rgb(246 227 166 / 34%) 0%,
+    rgb(246 227 166 / 24%) 12%,
+    rgb(246 227 166 / 15%) 26%,
+    rgb(246 227 166 / 8%) 42%,
+    rgb(246 227 166 / 3.5%) 60%,
+    rgb(246 227 166 / 1%) 80%,
+    rgb(246 227 166 / 0%) 100%);
+  content: "";
+  opacity: 0;
+  pointer-events: none;
+  transform: translate(-50%, -50%);
+  transition: opacity .6s ease;
+}
+
+.night-mode .scene-frame::after { opacity: 1; }
 
 .scene-skirting {
   fill: var(--parcel);
@@ -524,6 +552,16 @@ button:focus-visible {
 .scene-sofa .sofa-tuft { fill: var(--fig); stroke: none; }
 .scene-sofa .sofa-seam,
 .scene-sofa .sofa-pleats { fill: none; stroke-opacity: .45; stroke-width: 2; }
+
+/* Throw pillow with the buddy's name stitched on */
+.scene-pillow .pillow-body { fill: var(--chartreuse); stroke: var(--fig); stroke-width: 3; }
+.scene-pillow .pillow-stitch { fill: none; stroke: var(--capers); stroke-dasharray: 4 4; stroke-linecap: round; stroke-opacity: .7; stroke-width: 1.6; }
+.scene-pillow .pillow-name {
+  fill: var(--capers);
+  font-family: "bd-caramel-variable", "bree", ui-sans-serif, system-ui, sans-serif;
+  font-weight: 400;
+  letter-spacing: .02em;
+}
 
 .scene-lamp {
   cursor: pointer;

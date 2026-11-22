@@ -303,19 +303,65 @@ function BuddyScene({ look, accessory, showBook = false, nightMode, onToggleNigh
       viewBox="0 0 640 300"
       role="group"
       aria-labelledby="buddy-scene-title"
-      preserveAspectRatio="xMidYMid meet"
+      preserveAspectRatio="xMidYMax slice"
     >
       <title id="buddy-scene-title">Your study buddy relaxing on a sofa</title>
-      <rect x="1" y="1" width="638" height="298" rx="24" className="scene-background" />
-      <g className="scene-window">
-        <rect x="42" y="34" width="112" height="94" rx="4" />
+      <defs>
+        {/* Wobbles straight edges so shapes look drawn by hand */}
+        <filter id="scene-hand-drawn" x="-8%" y="-8%" width="116%" height="116%">
+          <feTurbulence type="fractalNoise" baseFrequency="0.035" numOctaves="2" seed="7" result="wobble" />
+          <feDisplacementMap in="SourceGraphic" in2="wobble" scale="3.2" xChannelSelector="R" yChannelSelector="G" />
+        </filter>
+        {/* Rougher displacement gives the rug a soft, woolly edge */}
+        <filter id="scene-fuzzy" x="-6%" y="-30%" width="112%" height="160%">
+          <feTurbulence type="fractalNoise" baseFrequency="0.5" numOctaves="2" seed="11" result="fuzz" />
+          <feDisplacementMap in="SourceGraphic" in2="fuzz" scale="7" xChannelSelector="R" yChannelSelector="G" />
+        </filter>
+        <radialGradient id="scene-lamp-glow">
+          <stop offset="0" stopColor="#f6e3a6" stopOpacity=".55" />
+          <stop offset=".55" stopColor="#f6e3a6" stopOpacity=".16" />
+          <stop offset="1" stopColor="#f6e3a6" stopOpacity="0" />
+        </radialGradient>
+      </defs>
+
+      {nightMode && <ellipse cx="572" cy="128" rx="210" ry="170" fill="url(#scene-lamp-glow)" aria-hidden="true" />}
+
+      <g className="scene-window" filter="url(#scene-hand-drawn)">
+        <rect className="window-pane" x="46" y="38" width="104" height="88" rx="3" />
+        {!nightMode && <path className="window-cloud" d="M64 70q2-11 13-9 5-8 14-3 10-2 11 8 7 1 6 8H63q-6-1 1-4z" />}
         {nightMode && <g className="scene-night-sky" aria-hidden="true">
           <path d="M78 54a17 17 0 1 0 20 22A19 19 0 0 1 78 54z" />
           <circle cx="124" cy="54" r="2" /><circle cx="112" cy="95" r="1.7" />
           <path d="m132 77 1.5 3 3 1.5-3 1.5-1.5 3-1.5-3-3-1.5 3-1.5z" />
         </g>}
-        <path d="M98 35v92M43 81h110" />
+        <path className="window-bars" d="M98 40v84M48 82h100" />
+        <rect className="window-frame" x="46" y="38" width="104" height="88" rx="3" />
+        <rect className="window-outline" x="41" y="33" width="114" height="98" rx="5" />
+        <path className="window-sill" d="M34 131h128l-5 9H39z" />
       </g>
+
+      <g filter="url(#scene-hand-drawn)">
+        <path className="scene-skirting" d="M-20 233h680v11H-20z" />
+        <path className="scene-floor-shade" d="M-20 244h680v7H-20z" />
+      </g>
+
+      <g className="scene-plant" filter="url(#scene-hand-drawn)" aria-hidden="true">
+        <path className="plant-leaf" d="M86 212q-26-14-30-42 22 8 30 42z" />
+        <path className="plant-leaf light" d="M90 210q-4-40 14-58 10 30-14 58z" />
+        <path className="plant-leaf" d="M94 213q14-28 40-30-8 26-40 30z" />
+        <path className="plant-leaf light" d="M88 214q-22-2-36-18 22-4 36 18z" />
+        <path className="plant-pot" d="M70 210h40l-5 40H75z" />
+        <path className="plant-pot" d="M66 205h48v9H66z" />
+      </g>
+
+      <g className="scene-rug" aria-hidden="true">
+        <g filter="url(#scene-fuzzy)">
+          <ellipse className="rug-base" cx="320" cy="268" rx="236" ry="27" />
+        </g>
+        <ellipse className="rug-inner" cx="320" cy="268" rx="204" ry="18" />
+        <path className="rug-fringe" d="M84 262l-9-2m8 7-10 1m11 4-9 4M556 262l9-2m-8 7 10 1m-11 4 9 4" />
+      </g>
+
       <g
         className={`scene-lamp ${nightMode ? 'is-on' : ''}`}
         role="button"
@@ -330,19 +376,33 @@ function BuddyScene({ look, accessory, showBook = false, nightMode, onToggleNigh
           }
         }}
       >
-        <path d="M548 76h48l14 47h-76zM572 123v126" />
-        <path d="M552 250h40" />
+        <rect className="lamp-hit" x="520" y="60" width="106" height="196" />
+        <g filter="url(#scene-hand-drawn)">
+          <path className="lamp-pole" d="M572 124V244" />
+          <path className="lamp-pole-line" d="M569 128V242" />
+          <ellipse className="lamp-base" cx="572" cy="246" rx="21" ry="6" />
+          <path className="lamp-pull" d="M590 124v26" />
+          <circle className="lamp-pull-knob" cx="590" cy="153" r="3.5" />
+          <path className="lamp-shade" d="M546 70h52l20 54h-92z" />
+          <path className="lamp-pleats" d="M555 72l-14 50M564 72l-8 50M572 72v50M580 72l8 50M589 72l14 50" />
+        </g>
       </g>
-      <ellipse className="scene-shadow" cx="320" cy="270" rx="190" ry="17" />
-      <path className="scene-floor" d="M4 244h632" />
-      <g className="scene-sofa">
-        <path d="M184 190v-45a21 21 0 0 1 21-21h230a21 21 0 0 1 21 21v45" />
-        <path d="M196 171h248v54H196z" />
-        <rect x="158" y="153" width="43" height="87" rx="17" />
-        <rect x="439" y="153" width="43" height="87" rx="17" />
-        <path d="M183 240v9m251-9v9" />
+
+      <ellipse className="scene-shadow" cx="320" cy="258" rx="176" ry="11" />
+      {/* Puffy tufted couch with rounded arms and a scalloped skirt */}
+      <g className="scene-sofa" filter="url(#scene-hand-drawn)">
+        <path d="M184 178V142Q184 113 214 111Q250 99 288 108Q320 97 352 108Q390 99 426 111Q456 113 456 142V178Z" />
+        <circle className="sofa-tuft" cx="252" cy="140" r="2.8" />
+        <circle className="sofa-tuft" cx="320" cy="134" r="2.8" />
+        <circle className="sofa-tuft" cx="388" cy="140" r="2.8" />
+        <path className="sofa-cushion" d="M190 170Q320 160 450 170Q456 171 456 178V224H184V178Q184 171 190 170Z" />
+        <path className="sofa-seam" d="M196 186Q320 179 444 186" />
+        <path className="sofa-skirt" d="M156 222H484V236Q472.3 252 460.6 236Q448.9 252 437.1 236Q425.4 252 413.7 236Q402.0 252 390.3 236Q378.6 252 366.9 236Q355.1 252 343.4 236Q331.7 252 320.0 236Q308.3 252 296.6 236Q284.9 252 273.1 236Q261.4 252 249.7 236Q238.0 252 226.3 236Q214.6 252 202.9 236Q191.1 252 179.4 236Q167.7 252 156.0 236Z" />
+        <path className="sofa-pleats" d="M179.4 226v9M202.9 226v9M226.3 226v9M249.7 226v9M273.1 226v9M296.6 226v9M320.0 226v9M343.4 226v9M366.9 226v9M390.3 226v9M413.7 226v9M437.1 226v9M460.6 226v9" />
+        <path d="M150 232Q146 190 152 162Q156 142 176 141Q198 142 202 162Q206 194 202 232Q176 240 150 232Z" />
+        <path d="M490 232Q494 190 488 162Q484 142 464 141Q442 142 438 162Q434 194 438 232Q464 240 490 232Z" />
       </g>
-      <g className="scene-buddy">
+      <g className="scene-buddy" filter="url(#scene-hand-drawn)">
         {look === 'cat' && <path d="m270 118 7-35 27 23m28 0 27-23 7 35" />}
         {look === 'owl' && <path d="M274 119q3-25 18-22m56 0q15-3 18 22" />}
         <path d="M263 171c3-56 22-83 57-83s54 27 57 83z" />
@@ -861,16 +921,20 @@ function App() {
 
   return (
     <main className="app-shell">
-      <section className={`study-window ${nightMode ? 'night-mode' : ''}`} aria-label="Tomo's Nook study screen">
+      <section className={`study-window room-wall ${nightMode ? 'night-mode' : ''}`} aria-label="Tomo's Nook study screen">
         <header className="top-bar">
-          <div className="brand-lockup">
-            <span className="brand-mark" aria-hidden="true">✦</span>
-            <div>
-              <p className="eyebrow">YOUR STUDY SPACE</p>
-              <h1>Tomo's Nook</h1>
-            </div>
+          <div className="hanging-sign">
+            <svg className="hanging-sign-string" aria-hidden="true">
+              <line x1="50%" y1="4" x2="16%" y2="28" />
+              <line x1="50%" y1="4" x2="84%" y2="28" />
+              <circle cx="50%" cy="4" r="3.5" />
+            </svg>
+            <h1>Tomo's Nook</h1>
           </div>
-          <span className="buddy-status"><span /> {buddyName || 'Tomo'} is here</span>
+          <div className={`session-status header-status ${isComplete ? 'complete' : ''} ${isPaused ? 'paused' : ''} ${isBreak ? 'break' : ''}`} role="status">
+            <span className="status-dot" />
+            {!isTimedSession && !hasValidDuration ? 'NO SESSION SET' : status}
+          </div>
         </header>
 
         {maxFocusNudgeVisible && maxFocusEnabled && isRunning && !isBreak && (
@@ -905,11 +969,8 @@ function App() {
 
         <section className={`focus-content ${isTimedSession ? 'session-mode-content' : ''}`} aria-label="Focus timer and companion">
           {isComplete ? (
+            <>
             <div className={`timer-result ${isBreak ? 'break-result' : ''}`}>
-              <div className="session-status complete">
-                <span className="status-dot" />
-                {status}
-              </div>
               <h2 className="result-title">{isBreak ? 'Break complete' : 'Nice work!'}</h2>
               <p className="result-copy">
                 {isBreak ? 'Ready to start another focus session?' : `You focused for ${formatDuration(sessionMinutes)}.`}
@@ -935,9 +996,6 @@ function App() {
                   </button>
                 </div>
               )}
-              <div className="scene-frame result-scene">
-                <BuddyScene look={buddyLook} accessory={equippedAccessory} nightMode={nightMode} onToggleNightMode={toggleNightMode} />
-              </div>
               <div className="result-actions">
                 {isBreak ? (
                   <button className="start-button" onClick={() => { void window.focusCompanion.startFocusTimer(profile.session_minutes) }}>
@@ -958,12 +1016,12 @@ function App() {
                 )}
               </div>
             </div>
+            <div className="scene-frame result-scene">
+              <BuddyScene look={buddyLook} accessory={equippedAccessory} nightMode={nightMode} onToggleNightMode={toggleNightMode} />
+            </div>
+            </>
           ) : isTimedSession ? (
             <>
-              <div className={`session-status ${isPaused ? 'paused' : ''} ${isBreak ? 'break' : ''}`}>
-                <span className="status-dot" />
-                {status}
-              </div>
               {maxFocusEnabled && isRunning && !isBreak && (
                 <p className="max-focus-session-active" aria-label="Max Focus is active">Max Focus active</p>
               )}
@@ -983,18 +1041,6 @@ function App() {
               <p className="session-detail">
                 {isBreak ? `${sessionMinutes}-minute break` : 'Stay with your focus session'}
               </p>
-              <div className="scene-frame session-scene">
-                <BuddyScene look={buddyLook} accessory={equippedAccessory} showBook={isRunning && !isBreak} nightMode={nightMode} onToggleNightMode={toggleNightMode} />
-              </div>
-              <div className="buddy-caption session-caption">
-                <p>
-                  {isBreak
-                    ? 'Take a few minutes away from your desk.'
-                    : isPaused
-                      ? `Paused at ${formatTime(secondsLeft, timer.durationMinutes)}. Continue whenever you are ready.`
-                      : `${buddyName || 'Tomo'} is reading with you.`}
-                </p>
-              </div>
               <div className="primary-actions timer-actions">
                 <button className="start-button" onClick={isRunning ? pause : startOrResume}>
                   {isRunning ? 'Pause' : isPaused ? 'Continue' : isBreak ? 'Start break' : 'Start'}
@@ -1005,38 +1051,42 @@ function App() {
                   </button>
                 )}
               </div>
+              <div className="buddy-caption session-caption">
+                <p>
+                  {isBreak
+                    ? 'Take a few minutes away from your desk.'
+                    : isPaused
+                      ? `Paused at ${formatTime(secondsLeft, timer.durationMinutes)}. Continue whenever you are ready.`
+                      : `${buddyName || 'Tomo'} is reading with you.`}
+                </p>
+              </div>
+              <div className="scene-frame session-scene">
+                <BuddyScene look={buddyLook} accessory={equippedAccessory} showBook={isRunning && !isBreak} nightMode={nightMode} onToggleNightMode={toggleNightMode} />
+              </div>
             </>
           ) : !hasValidDuration ? (
             <>
-              <div className="session-status">
-                <span className="status-dot" />
-                NO SESSION SET
-              </div>
               <div className="timer" aria-label="No session duration set">
                 --:--
               </div>
               <p className="session-detail">
                 Choose a session length to get started
               </p>
-              <div className="scene-frame">
-                <BuddyScene look={buddyLook} accessory={equippedAccessory} nightMode={nightMode} onToggleNightMode={toggleNightMode} />
-              </div>
-              <div className="buddy-caption">
-                <h2>{buddyName || 'Tomo'}</h2>
-                <p>Set a focus duration to begin.</p>
-              </div>
               <div className="primary-actions">
                 <button className="start-button" onClick={() => openDurationPicker()}>
                   Choose session length
                 </button>
               </div>
+              <div className="buddy-caption">
+                <h2>{buddyName || 'Tomo'}</h2>
+                <p>Set a focus duration to begin.</p>
+              </div>
+              <div className="scene-frame">
+                <BuddyScene look={buddyLook} accessory={equippedAccessory} nightMode={nightMode} onToggleNightMode={toggleNightMode} />
+              </div>
             </>
           ) : (
             <>
-              <div className="session-status">
-                <span className="status-dot" />
-                {status}
-              </div>
               <div className="timer timer-duration" aria-label={`${formatDuration(timer.durationMinutes)} session`}>
                 {formatDuration(timer.durationMinutes)}
               </div>
@@ -1047,8 +1097,8 @@ function App() {
                   Change
                 </button>
               </p>
-              <div className="scene-frame">
-                <BuddyScene look={buddyLook} accessory={equippedAccessory} nightMode={nightMode} onToggleNightMode={toggleNightMode} />
+              <div className="primary-actions">
+                <button className="start-button" onClick={primaryAction}>Start</button>
               </div>
               <div className="buddy-caption">
                 <h2>{buddyName || 'Tomo'}</h2>
@@ -1058,8 +1108,8 @@ function App() {
                     : 'Finish a focus session to earn your first accessory'}
                 </p>
               </div>
-              <div className="primary-actions">
-                <button className="start-button" onClick={primaryAction}>Start</button>
+              <div className="scene-frame">
+                <BuddyScene look={buddyLook} accessory={equippedAccessory} nightMode={nightMode} onToggleNightMode={toggleNightMode} />
               </div>
             </>
           )}

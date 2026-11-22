@@ -296,13 +296,29 @@ function DesktopPet() {
   )
 }
 
-function BuddyScene({ look, buddyName, accessory, showBook = false, nightMode, onToggleNightMode }: { look: BuddyLook; buddyName: string; accessory?: ClosetAccessory; showBook?: boolean; nightMode: boolean; onToggleNightMode: () => void }) {
+function BuddyScene({ look, buddyName, accessory, showBook = false, nightMode, closetOpen, onToggleNightMode, onEditName, onOpenCloset }: { look: BuddyLook; buddyName: string; accessory?: ClosetAccessory; showBook?: boolean; nightMode: boolean; closetOpen: boolean; onToggleNightMode: () => void; onEditName: () => void; onOpenCloset: () => void }) {
+  // The wardrobe door swings open first, then the closet dialog appears; it closes again with the dialog
+  const [doorOpening, setDoorOpening] = useState(false)
+  const openTimeout = useRef<number | null>(null)
+  const wardrobeOpen = doorOpening || closetOpen
+  useEffect(() => {
+    if (!closetOpen) setDoorOpening(false)
+  }, [closetOpen])
+  useEffect(() => () => {
+    if (openTimeout.current !== null) window.clearTimeout(openTimeout.current)
+  }, [])
+  const openWardrobe = () => {
+    if (wardrobeOpen) return
+    setDoorOpening(true)
+    openTimeout.current = window.setTimeout(onOpenCloset, 280)
+  }
+
   // The name pillow grows with the name and leans on the right arm of the couch.
   // Names saved before the 10-character limit are cut short here so they still fit.
   const pillowName = buddyName.slice(0, BUDDY_NAME_MAX_LENGTH)
-  const pillowWidth = Math.min(108, Math.max(66, pillowName.length * 10 + 28))
+  const pillowWidth = Math.min(104, Math.max(66, pillowName.length * 10 + 28))
   const pillowFontSize = pillowName.length > 8 ? 19 - (pillowName.length - 8) : 19
-  const pillowX = 381
+  const pillowX = 414
   const pillowCenterX = pillowX + pillowWidth / 2
   return (
     <svg
@@ -327,18 +343,21 @@ function BuddyScene({ look, buddyName, accessory, showBook = false, nightMode, o
       </defs>
 
 
+      <g transform="translate(418 20) scale(0.7) translate(-34 -33)">
       <g className="scene-window" filter="url(#scene-hand-drawn)">
-        <rect className="window-pane" x="46" y="38" width="104" height="88" rx="3" />
+        <rect className="window-pane" x="46" y="38" width="154" height="88" rx="3" />
         {!nightMode && <path className="window-cloud" d="M64 70q2-11 13-9 5-8 14-3 10-2 11 8 7 1 6 8H63q-6-1 1-4z" />}
         {nightMode && <g className="scene-night-sky" aria-hidden="true">
           <path d="M78 54a17 17 0 1 0 20 22A19 19 0 0 1 78 54z" />
-          <circle cx="124" cy="54" r="2" /><circle cx="112" cy="95" r="1.7" />
+          <circle cx="124" cy="54" r="2" /><circle cx="112" cy="95" r="1.7" /><circle cx="172" cy="104" r="1.8" />
           <path d="m132 77 1.5 3 3 1.5-3 1.5-1.5 3-1.5-3-3-1.5 3-1.5z" />
+          <path d="m176 56 1.5 3 3 1.5-3 1.5-1.5 3-1.5-3-3-1.5 3-1.5z" />
         </g>}
-        <path className="window-bars" d="M98 40v84M48 82h100" />
-        <rect className="window-frame" x="46" y="38" width="104" height="88" rx="3" />
-        <rect className="window-outline" x="41" y="33" width="114" height="98" rx="5" />
-        <path className="window-sill" d="M34 131h128l-5 9H39z" />
+        <path className="window-bars" d="M123 40v84M48 82h150" />
+        <rect className="window-frame" x="46" y="38" width="154" height="88" rx="3" />
+        <rect className="window-outline" x="41" y="33" width="164" height="98" rx="5" />
+        <path className="window-sill" d="M34 131h178l-5 9H39z" />
+      </g>
       </g>
 
       <g filter="url(#scene-hand-drawn)">
@@ -346,21 +365,12 @@ function BuddyScene({ look, buddyName, accessory, showBook = false, nightMode, o
         <path className="scene-floor-shade" d="M-20 244h680v7H-20z" />
       </g>
 
-      <g className="scene-plant" filter="url(#scene-hand-drawn)" aria-hidden="true">
-        <path className="plant-leaf" d="M86 212q-26-14-30-42 22 8 30 42z" />
-        <path className="plant-leaf light" d="M90 210q-4-40 14-58 10 30-14 58z" />
-        <path className="plant-leaf" d="M94 213q14-28 40-30-8 26-40 30z" />
-        <path className="plant-leaf light" d="M88 214q-22-2-36-18 22-4 36 18z" />
-        <path className="plant-pot" d="M70 210h40l-5 40H75z" />
-        <path className="plant-pot" d="M66 205h48v9H66z" />
-      </g>
-
       <g className="scene-rug" aria-hidden="true">
         <g filter="url(#scene-fuzzy)">
-          <ellipse className="rug-base" cx="320" cy="268" rx="236" ry="27" />
+          <ellipse className="rug-base" cx="346" cy="268" rx="226" ry="27" />
         </g>
-        <ellipse className="rug-inner" cx="320" cy="268" rx="204" ry="18" />
-        <path className="rug-fringe" d="M84 262l-9-2m8 7-10 1m11 4-9 4M556 262l9-2m-8 7 10 1m-11 4 9 4" />
+        <ellipse className="rug-inner" cx="346" cy="268" rx="194" ry="18" />
+        <path className="rug-fringe" d="M120 262l-9-2m8 7-10 1m11 4-9 4M572 262l9-2m-8 7 10 1m-11 4 9 4" />
       </g>
 
       <g
@@ -389,25 +399,91 @@ function BuddyScene({ look, buddyName, accessory, showBook = false, nightMode, o
         </g>
       </g>
 
-      <ellipse className="scene-shadow" cx="320" cy="258" rx="176" ry="11" />
-      {/* Puffy tufted couch with rounded arms and a scalloped skirt */}
-      <g className="scene-sofa" filter="url(#scene-hand-drawn)">
-        <path d="M184 178V142Q184 113 214 111Q250 99 288 108Q320 97 352 108Q390 99 426 111Q456 113 456 142V178Z" />
-        <circle className="sofa-tuft" cx="252" cy="140" r="2.8" />
-        <circle className="sofa-tuft" cx="320" cy="134" r="2.8" />
-        <circle className="sofa-tuft" cx="388" cy="140" r="2.8" />
-        <path className="sofa-cushion" d="M190 170Q320 160 450 170Q456 171 456 178V224H184V178Q184 171 190 170Z" />
-        <path className="sofa-seam" d="M196 186Q320 179 444 186" />
-        <path className="sofa-skirt" d="M156 222H484V236Q472.3 252 460.6 236Q448.9 252 437.1 236Q425.4 252 413.7 236Q402.0 252 390.3 236Q378.6 252 366.9 236Q355.1 252 343.4 236Q331.7 252 320.0 236Q308.3 252 296.6 236Q284.9 252 273.1 236Q261.4 252 249.7 236Q238.0 252 226.3 236Q214.6 252 202.9 236Q191.1 252 179.4 236Q167.7 252 156.0 236Z" />
-        <path className="sofa-pleats" d="M179.4 226v9M202.9 226v9M226.3 226v9M249.7 226v9M273.1 226v9M296.6 226v9M320.0 226v9M343.4 226v9M366.9 226v9M390.3 226v9M413.7 226v9M437.1 226v9M460.6 226v9" />
-        <path d="M150 232Q146 190 152 162Q156 142 176 141Q198 142 202 162Q206 194 202 232Q176 240 150 232Z" />
-        <path d="M490 232Q494 190 488 162Q484 142 464 141Q442 142 438 162Q434 194 438 232Q464 240 490 232Z" />
+      {/* Wardrobe behind the couch: the left door swings open a little on hover and wide on click, then the closet opens */}
+      <g
+        className={`scene-wardrobe ${wardrobeOpen ? 'is-open' : ''}`}
+        role="button"
+        tabIndex={0}
+        aria-label="Open closet"
+        onClick={openWardrobe}
+        onKeyDown={(event) => {
+          if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault()
+            openWardrobe()
+          }
+        }}
+      >
+        <title>Open closet</title>
+        <g filter="url(#scene-hand-drawn)">
+          <path className="wardrobe-wood" d="M112 78Q112 60 138 56Q186 30 234 56Q260 60 260 78Z" />
+          <path className="wardrobe-trim" d="M164 62q22-12 44 0" />
+          <circle className="wardrobe-knob" cx="186" cy="52" r="3.2" />
+          <rect className="wardrobe-wood" x="118" y="76" width="136" height="148" rx="3" />
+          <rect className="wardrobe-inside" x="124" y="82" width="62" height="136" />
+          <g className="wardrobe-dots">
+            <circle cx="134" cy="112" r="3" /><circle cx="176" cy="122" r="3" /><circle cx="132" cy="164" r="3" />
+            <circle cx="178" cy="176" r="3" /><circle cx="140" cy="204" r="3" /><circle cx="172" cy="206" r="3" />
+          </g>
+          <path className="wardrobe-rod" d="M126 96h58" />
+          <rect className="wardrobe-wood door-right" x="186" y="82" width="62" height="136" rx="2" />
+          <path className="wardrobe-mirror" d="M194 102q0-12 23-14 23 2 23 14v102h-46z" />
+          <circle className="wardrobe-knob" cx="191" cy="152" r="2.6" />
+          <rect className="wardrobe-wood" x="112" y="222" width="148" height="12" rx="3" />
+          <path className="wardrobe-wood" d="M120 234q0 8 6 10h9q-4-4-4-10zM252 234q0 8-6 10h-9q4-4 4-10z" />
+        </g>
+        <g className="wardrobe-door">
+          <g filter="url(#scene-hand-drawn)">
+            <rect className="wardrobe-wood door-left" x="124" y="82" width="62" height="136" rx="2" />
+            <rect className="wardrobe-panel" x="132" y="92" width="46" height="54" rx="3" />
+            <rect className="wardrobe-panel" x="132" y="154" width="46" height="54" rx="3" />
+            <circle className="wardrobe-knob" cx="181" cy="152" r="2.6" />
+          </g>
+        </g>
       </g>
-      <g className="scene-pillow" transform={`rotate(7 ${pillowCenterX} 154)`}>
+
+      <g className="scene-plant" transform="translate(-10 0)" filter="url(#scene-hand-drawn)" aria-hidden="true">
+        <path className="plant-leaf" d="M86 212q-26-14-30-42 22 8 30 42z" />
+        <path className="plant-leaf light" d="M90 210q-4-40 14-58 10 30-14 58z" />
+        <path className="plant-leaf" d="M94 213q14-28 40-30-8 26-40 30z" />
+        <path className="plant-leaf light" d="M88 214q-22-2-36-18 22-4 36 18z" />
+        <path className="plant-pot" d="M70 210h40l-5 40H75z" />
+        <path className="plant-pot" d="M66 205h48v9H66z" />
+      </g>
+
+      <ellipse className="scene-shadow" cx="360" cy="258" rx="146" ry="11" />
+      {/* Puffy tufted couch with rounded arms and a scalloped skirt, set right so the wardrobe peeks out behind it */}
+      <g className="scene-sofa" filter="url(#scene-hand-drawn)">
+        <path d="M251.2 178V142Q251.2 113 275.2 111Q304 99 334.4 108Q360 97 385.6 108Q416 99 444.8 111Q468.8 113 468.8 142V178Z" />
+        <circle className="sofa-tuft" cx="305.6" cy="140" r="2.8" />
+        <circle className="sofa-tuft" cx="360" cy="134" r="2.8" />
+        <circle className="sofa-tuft" cx="414.4" cy="140" r="2.8" />
+        <path className="sofa-cushion" d="M256 170Q360 160 464 170Q468.8 171 468.8 178V224H251.2V178Q251.2 171 256 170Z" />
+        <path className="sofa-seam" d="M260.8 186Q360 179 459.2 186" />
+        <path className="sofa-skirt" d="M228.8 222H491.2V236Q481.8 252 472.5 236Q463.1 252 453.7 236Q444.3 252 435 236Q425.6 252 416.2 236Q406.9 252 397.5 236Q388.1 252 378.7 236Q369.4 252 360 236Q350.6 252 341.3 236Q331.9 252 322.5 236Q313.1 252 303.8 236Q294.4 252 285 236Q275.7 252 266.3 236Q256.9 252 247.5 236Q238.2 252 228.8 236Z" />
+        <path className="sofa-pleats" d="M247.5 226v9M266.3 226v9M285 226v9M303.8 226v9M322.5 226v9M341.3 226v9M360 226v9M378.7 226v9M397.5 226v9M416.2 226v9M435 226v9M453.7 226v9M472.5 226v9" />
+        <path d="M224 232Q220.8 190 225.6 162Q228.8 142 244.8 141Q262.4 142 265.6 162Q268.8 194 265.6 232Q244.8 240 224 232Z" />
+        <path d="M496 232Q499.2 190 494.4 162Q491.2 142 475.2 141Q457.6 142 454.4 162Q451.2 194 454.4 232Q475.2 240 496 232Z" />
+      </g>
+      <g
+        className="scene-pillow"
+        transform={`rotate(7 ${pillowCenterX} 154)`}
+        role="button"
+        tabIndex={0}
+        aria-label={`Rename ${pillowName}`}
+        onClick={onEditName}
+        onKeyDown={(event) => {
+          if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault()
+            onEditName()
+          }
+        }}
+      >
+        <title>Rename {pillowName}</title>
         <rect className="pillow-body" x={pillowX} y="131" width={pillowWidth} height="46" rx="15" filter="url(#scene-hand-drawn)" />
         <rect className="pillow-stitch" x={pillowX + 6} y="137" width={pillowWidth - 12} height="34" rx="10" />
         <text className="pillow-name" x={pillowCenterX} y="155" fontSize={pillowFontSize} textAnchor="middle" dominantBaseline="central">{pillowName}</text>
       </g>
+      <g transform="translate(40 0)">
       <g className="scene-buddy" filter="url(#scene-hand-drawn)">
         {look === 'cat' && <path d="m270 118 7-35 27 23m28 0 27-23 7 35" />}
         {look === 'owl' && <path d="M274 119q3-25 18-22m56 0q15-3 18 22" />}
@@ -423,6 +499,7 @@ function BuddyScene({ look, buddyName, accessory, showBook = false, nightMode, o
         </>}
         {showBook && <g className="buddy-book"><path d="M296 158q12-7 24 0v31q-12-7-24 0z" /><path d="M320 158q12-7 24 0v31q-12-7-24 0z" /><path d="M320 159v31" /></g>}
         {accessory && <AccessoryDecoration accessory={accessory} />}
+      </g>
       </g>
     </svg>
   )
@@ -630,6 +707,18 @@ function App() {
     } else {
       setMaxFocusConsentOpen(true)
     }
+  }
+
+  const openClosetFromRoom = () => {
+    setClosetPage('grid')
+    setModal('closet')
+  }
+
+  // Clicking the name pillow in the room opens Settings with the name field ready to edit
+  const openNameEditor = () => {
+    setDraftBuddyName(buddyName)
+    setIsEditingName(true)
+    setModal('settings')
   }
 
   const toggleNightMode = () => {
@@ -1023,7 +1112,7 @@ function App() {
               </div>
             </div>
             <div className="scene-frame result-scene">
-              <BuddyScene look={buddyLook} buddyName={buddyName || 'Tomo'} accessory={equippedAccessory} nightMode={nightMode} onToggleNightMode={toggleNightMode} />
+              <BuddyScene look={buddyLook} buddyName={buddyName || 'Tomo'} accessory={equippedAccessory} nightMode={nightMode} onToggleNightMode={toggleNightMode} onEditName={openNameEditor} closetOpen={modal === 'closet'} onOpenCloset={openClosetFromRoom} />
             </div>
             </>
           ) : isTimedSession ? (
@@ -1067,7 +1156,7 @@ function App() {
                 </p>
               </div>
               <div className="scene-frame session-scene">
-                <BuddyScene look={buddyLook} buddyName={buddyName || 'Tomo'} accessory={equippedAccessory} showBook={isRunning && !isBreak} nightMode={nightMode} onToggleNightMode={toggleNightMode} />
+                <BuddyScene look={buddyLook} buddyName={buddyName || 'Tomo'} accessory={equippedAccessory} showBook={isRunning && !isBreak} nightMode={nightMode} onToggleNightMode={toggleNightMode} onEditName={openNameEditor} closetOpen={modal === 'closet'} onOpenCloset={openClosetFromRoom} />
               </div>
             </>
           ) : !hasValidDuration ? (
@@ -1087,7 +1176,7 @@ function App() {
                 <p>Set a focus duration to begin.</p>
               </div>
               <div className="scene-frame">
-                <BuddyScene look={buddyLook} buddyName={buddyName || 'Tomo'} accessory={equippedAccessory} nightMode={nightMode} onToggleNightMode={toggleNightMode} />
+                <BuddyScene look={buddyLook} buddyName={buddyName || 'Tomo'} accessory={equippedAccessory} nightMode={nightMode} onToggleNightMode={toggleNightMode} onEditName={openNameEditor} closetOpen={modal === 'closet'} onOpenCloset={openClosetFromRoom} />
               </div>
             </>
           ) : (
@@ -1109,7 +1198,7 @@ function App() {
                 {!equippedAccessory && <p>Finish a focus session to earn your first accessory</p>}
               </div>
               <div className="scene-frame">
-                <BuddyScene look={buddyLook} buddyName={buddyName || 'Tomo'} accessory={equippedAccessory} nightMode={nightMode} onToggleNightMode={toggleNightMode} />
+                <BuddyScene look={buddyLook} buddyName={buddyName || 'Tomo'} accessory={equippedAccessory} nightMode={nightMode} onToggleNightMode={toggleNightMode} onEditName={openNameEditor} closetOpen={modal === 'closet'} onOpenCloset={openClosetFromRoom} />
               </div>
             </>
           )}

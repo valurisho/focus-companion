@@ -42,9 +42,9 @@
   --palette-wine: var(--oxblood);
   --palette-sand: var(--chartreuse);
 
-  /* Slightly uneven corners read as cut paper rather than UI chrome */
-  --hand-radius: 16px 13px 17px 12px / 12px 17px 13px 16px;
-  --hand-radius-sm: 10px 8px 11px 7px / 7px 11px 8px 10px;
+  /* Soft, even corners for buttons, chips and cards */
+  --hand-radius: 16px;
+  --hand-radius-sm: 10px;
 
   /* Green tile floor */
   /* Speckled wall: sparse light and dark flecks, like pastel paper. Used only on the main buddy page. */
@@ -553,8 +553,46 @@ button:focus-visible {
 .scene-sofa .sofa-seam,
 .scene-sofa .sofa-pleats { fill: none; stroke-opacity: .45; stroke-width: 2; }
 
+/* Wardrobe behind the couch; clicking it opens the closet */
+.scene-wardrobe {
+  cursor: pointer;
+  outline: none;
+}
+
+.scene-wardrobe .wardrobe-wood { fill: var(--wood); stroke: var(--fig); stroke-linejoin: round; stroke-width: 3; }
+.scene-wardrobe .door-left,
+.scene-wardrobe .door-right { fill: #c69a6d; }
+.scene-wardrobe .wardrobe-trim { fill: none; stroke: var(--fig); stroke-linecap: round; stroke-width: 2.5; }
+.scene-wardrobe .wardrobe-knob { fill: var(--fig); stroke: none; }
+.scene-wardrobe .wardrobe-panel { fill: none; stroke: var(--fig); stroke-opacity: .45; stroke-width: 2; }
+.scene-wardrobe .wardrobe-mirror { fill: var(--chambray); stroke: var(--fig); stroke-width: 2.5; }
+.scene-wardrobe .wardrobe-inside { fill: var(--chartreuse-soft); stroke: var(--fig); stroke-width: 2; }
+.scene-wardrobe .wardrobe-dots circle { fill: var(--cream); stroke: none; }
+.scene-wardrobe .wardrobe-rod { fill: none; stroke: var(--fig); stroke-linecap: round; stroke-width: 3; }
+
+/* The left door is hinged on its left edge: a quarter-open peek on hover, wide open on click */
+.scene-wardrobe .wardrobe-door {
+  transform-box: fill-box;
+  transform-origin: left center;
+  transition: transform .4s cubic-bezier(.3, 1.4, .5, 1);
+}
+
+.scene-wardrobe:hover .wardrobe-door,
+.scene-wardrobe:focus-visible .wardrobe-door { transform: scaleX(.7) skewY(-5deg); }
+.scene-wardrobe.is-open .wardrobe-door { transform: scaleX(.18) skewY(-12deg); }
+.scene-wardrobe:focus-visible .door-right { stroke: var(--oxblood); stroke-width: 4; }
+
+.night-mode .scene-wardrobe .wardrobe-inside { fill: #8c855e; }
+
 /* Throw pillow with the buddy's name stitched on */
-.scene-pillow .pillow-body { fill: var(--chartreuse); stroke: var(--fig); stroke-width: 3; }
+.scene-pillow {
+  cursor: pointer;
+  outline: none;
+}
+
+.scene-pillow .pillow-body { fill: var(--chartreuse); stroke: var(--fig); stroke-width: 3; transition: fill .15s ease; }
+.scene-pillow:hover .pillow-body { fill: var(--chartreuse-soft); }
+.scene-pillow:focus-visible .pillow-body { stroke: var(--oxblood); stroke-width: 4; }
 .scene-pillow .pillow-stitch { fill: none; stroke: var(--capers); stroke-dasharray: 4 4; stroke-linecap: round; stroke-opacity: .7; stroke-width: 1.6; }
 .scene-pillow .pillow-name {
   fill: var(--capers);
@@ -654,27 +692,19 @@ button:focus-visible {
   width: 100%;
   min-height: 74px;
   padding: 12px 24px;
-  border: 2px solid var(--fig);
+  border: 0;
   border-radius: var(--hand-radius);
   background-color: var(--oxblood);
-  box-shadow: 0 3px 0 var(--fig);
   color: var(--cream);
   cursor: pointer;
   font-size: 22px;
   font-weight: 760;
   letter-spacing: -.02em;
-  transition: background-color .18s ease, transform .18s ease, box-shadow .18s ease;
+  transition: background-color .18s ease;
 }
 
 .start-button:hover {
-  transform: translateY(-1px);
   background-color: #6e2a2f;
-  box-shadow: 0 4px 0 var(--fig);
-}
-
-.start-button:active {
-  transform: translateY(2px);
-  box-shadow: 0 1px 0 var(--fig);
 }
 
 .reset-button {
@@ -708,7 +738,7 @@ button:focus-visible {
   gap: 9px;
   min-height: 42px;
   padding: 0 12px 0 8px;
-  border: 1.5px solid var(--fig);
+  border: 1px solid var(--line-strong);
   border-radius: var(--hand-radius);
   background-color: var(--cream);
   white-space: nowrap;
@@ -769,7 +799,7 @@ button:focus-visible {
   transform: translateX(-50%);
   width: min(290px, calc(100% - 36px));
   padding: 13px 14px 12px;
-  border: 1.5px solid var(--fig);
+  border: 1px solid var(--line-strong);
   border-radius: var(--hand-radius);
   background-color: var(--cream);
   box-shadow: 0 8px 24px rgb(41 16 12 / 18%);
@@ -797,15 +827,15 @@ button:focus-visible {
 .max-focus-nudge-actions button {
   min-height: 31px;
   padding: 0 9px;
-  border: 1px solid var(--fig);
-  border-radius: 8px;
+  border: 1px solid var(--line-strong);
+  border-radius: 10px;
   font-size: 10px;
   font-weight: 750;
   cursor: pointer;
 }
 
 .nudge-dismiss-button { background: var(--cream); }
-.nudge-pause-button { background: var(--oxblood); color: var(--cream); }
+.nudge-pause-button { border-color: transparent; background: var(--oxblood); color: var(--cream); }
 
 .max-focus-consent-card {
   width: min(100%, 420px);
@@ -833,7 +863,7 @@ button:focus-visible {
 .secondary-button {
   min-height: 42px;
   padding: 0 16px;
-  border: 1.5px solid var(--fig);
+  border: 1px solid var(--line-strong);
   border-radius: var(--hand-radius);
   background-color: var(--cream);
   cursor: pointer;
@@ -863,10 +893,10 @@ button:focus-visible {
   max-height: calc(100vh - 48px);
   overflow-y: auto;
   padding: 30px;
-  border: 2px solid var(--fig);
-  border-radius: 20px 16px 22px 15px / 15px 22px 16px 20px;
+  border: 1px solid var(--line-strong);
+  border-radius: 20px;
   background-color: var(--paper);
-  box-shadow: 0 4px 0 var(--fig), 0 20px 60px rgb(41 16 12 / 22%);
+  box-shadow: 0 20px 60px rgb(41 16 12 / 18%);
 }
 
 .modal-close {
@@ -1673,7 +1703,7 @@ body.desktop-pet-window {
 .accessory-tile { display: flex; min-width: 0; min-height: 112px; flex-direction: column; align-items: center; justify-content: center; gap: 7px; padding: 12px 8px; border: 1.5px solid var(--line-strong); border-radius: var(--hand-radius-sm); background: var(--cream); color: var(--ink); text-align: center; }
 .accessory-tile.earned { cursor: pointer; }
 .accessory-tile.earned:hover { border-color: var(--line-strong); background: var(--cream); }
-.accessory-tile.equipped { border: 2px solid var(--fig); }
+.accessory-tile.equipped { border: 1.5px solid var(--oxblood); }
 .accessory-tile.locked { border-style: dashed; background: var(--parcel); color: var(--muted); cursor: not-allowed; }
 .accessory-tile-icon { display: grid; width: 28px; height: 28px; place-items: center; border: 1px solid var(--line-strong); border-radius: 7px; background: var(--parcel); font-size: 17px; }
 .accessory-tile strong { overflow: hidden; width: 100%; font-size: 9px; text-overflow: ellipsis; white-space: nowrap; }
@@ -1684,7 +1714,7 @@ body.desktop-pet-window {
 .closet-empty-state h3 { margin: 4px 0; font-size: 14px; }
 .closet-empty-state p, .closet-empty-hint { margin: 4px 0; color: var(--muted); font-size: 10px; line-height: 1.45; text-align: center; }
 .closet-footer { display: flex; flex-direction: column; margin-top: auto; padding-top: 24px; }
-.closet-primary-action { min-height: 60px; margin-top: 0; border: 2px solid var(--fig); border-radius: var(--hand-radius); background: var(--oxblood); box-shadow: 0 3px 0 var(--fig); color: var(--cream); font-size: 16px; font-weight: 800; cursor: pointer; }
+.closet-primary-action { min-height: 60px; margin-top: 0; border: 0; border-radius: var(--hand-radius); background: var(--oxblood); color: var(--cream); font-size: 16px; font-weight: 800; cursor: pointer; }
 .closet-primary-action:hover { background: var(--fig-soft); }
 .closet-empty-hint { margin: 0 0 13px; }
 .closet-feedback { padding: 25px 0; color: var(--muted); font-size: 12px; text-align: center; }
@@ -1706,7 +1736,7 @@ body.desktop-pet-window {
 .try-on-dots { display: flex; justify-content: center; gap: 6px; margin: 9px 0 13px; }
 .try-on-dots span { width: 7px; height: 7px; border: 1px solid var(--fig); border-radius: 50%; background: transparent; }
 .try-on-dots span.active { background: var(--fig); }
-.try-on-equip-button { width: min(100%, 440px); min-height: 50px; align-self: center; margin-top: 8px; padding: 0 22px; border: 2px solid var(--fig); border-radius: var(--hand-radius); background: var(--oxblood); box-shadow: 0 3px 0 var(--fig); color: var(--cream); font-size: 14px; font-weight: 800; cursor: pointer; }
+.try-on-equip-button { width: min(100%, 440px); min-height: 50px; align-self: center; margin-top: 8px; padding: 0 22px; border: 0; border-radius: var(--hand-radius); background: var(--oxblood); color: var(--cream); font-size: 14px; font-weight: 800; cursor: pointer; }
 .try-on-equip-button:hover:not(:disabled) { background: var(--fig-soft); color: var(--cream); }
 .try-on-equip-button:disabled { opacity: .65; cursor: wait; }
 .try-on-done { min-height: 48px; margin-top: 12px; padding: 0 22px; border: 0; border-radius: 16px; background: var(--parcel); color: var(--fig); font-size: 14px; font-weight: 750; text-decoration: none; cursor: pointer; }
@@ -1820,7 +1850,7 @@ body.desktop-pet-window {
   width: 100%;
   min-height: 44px;
   padding: 8px 14px;
-  border: 1.5px solid var(--fig);
+  border: 1px solid var(--line-strong);
   border-radius: var(--hand-radius);
   background-color: var(--cream);
   color: var(--ink);
@@ -1970,7 +2000,7 @@ body.desktop-pet-window {
 .night-mode .modal-card {
   border-color: #57544f;
   background-color: #302f2c;
-  box-shadow: 0 4px 0 #1a1917, 0 20px 60px rgb(0 0 0 / 35%);
+  box-shadow: 0 20px 60px rgb(0 0 0 / 35%);
   color: var(--ink);
 }
 
@@ -2106,3 +2136,62 @@ body.desktop-pet-window {
   background: var(--olive);
   color: var(--cream);
 }
+
+/* Onboarding: calm and mostly plain. A flat capers page with the same faint speckle as the
+   night wall, the cat mark, sentence-case labels, and soft buttons without outlines or drop edges. */
+.app-shell.onboarding-shell .study-window {
+  background-color: var(--capers);
+  background-image: var(--wall-texture-night);
+}
+
+.onboarding-shell:not(.welcome-shell) .onboarding-window-bar { background: transparent; }
+
+.app-shell.onboarding-shell .onboarding-card .eyebrow,
+.app-shell.onboarding-shell .settings-group-title {
+  color: var(--chartreuse);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: .01em;
+}
+
+.welcome-mark { filter: brightness(0) invert(.94) sepia(.18); }
+
+.app-shell.onboarding-shell .onboarding-primary {
+  min-height: 48px;
+  border: 0;
+  border-radius: 16px;
+  background: var(--chartreuse);
+  box-shadow: none;
+  color: var(--fig);
+}
+
+.app-shell.onboarding-shell .onboarding-primary:hover:not(:disabled) {
+  background: var(--chartreuse-soft);
+  color: var(--fig);
+  transform: none;
+}
+
+.app-shell.welcome-shell .onboarding-primary { width: min(100%, 300px); }
+
+.app-shell.onboarding-shell .onboarding-secondary {
+  min-height: 48px;
+  border: 1.5px solid rgb(243 239 228 / 30%);
+  border-radius: 16px;
+  background: transparent;
+  color: var(--cream);
+}
+
+.app-shell.onboarding-shell .onboarding-secondary:hover { background: rgb(243 239 228 / 8%); }
+
+.app-shell.onboarding-shell .onboarding-input,
+.app-shell.onboarding-shell .onboarding-select {
+  min-height: 44px;
+  border: 0;
+  border-radius: 12px;
+  background: rgb(243 239 228 / 94%);
+}
+
+.app-shell.onboarding-shell .onboarding-input:focus,
+.app-shell.onboarding-shell .onboarding-select:focus { outline: 2px solid var(--chartreuse); outline-offset: 2px; }
+
+.app-shell.onboarding-shell .buddy-look-option { border-radius: 14px; }

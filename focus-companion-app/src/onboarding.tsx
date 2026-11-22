@@ -460,7 +460,7 @@ export function OnboardingFlow({
         <div className="onboarding-content">
           {page === "welcome" && (
             <section className="onboarding-card welcome-card">
-              <p className="eyebrow">A LITTLE COMPANION FOR YOUR FOCUS</p>
+              <p className="eyebrow">A little companion for your focus</p>
               <h1><span>Tomo's</span><span>Nook</span></h1>
               <div className="welcome-buddy" aria-hidden="true">
                 <img className="welcome-mark" src={welcomeMark} alt="" />
@@ -583,7 +583,7 @@ export function OnboardingFlow({
               <StepMarker step={2} />
               <div className="auth-heading">
                 <div>
-                  <p className="eyebrow">YOUR BUDDY IS WAITING</p>
+                  <p className="eyebrow">Your buddy is waiting</p>
                   <h1>
                     {authMode === "sign-up" ? "Create your account" : "Log in"}
                   </h1>
@@ -708,7 +708,7 @@ export function OnboardingFlow({
 
               <form className="onboarding-form" onSubmit={saveProfile}>
                 <div className="onboarding-settings-group">
-                  <p className="settings-group-title">STUDY TIMER</p>
+                  <p className="settings-group-title">Study timer</p>
                   <label className="onboarding-label">Session length</label>
                   <div className="time-wheel">
                     <WheelColumn
@@ -740,7 +740,7 @@ export function OnboardingFlow({
                 </div>
 
                 <div className="onboarding-settings-group">
-                  <p className="settings-group-title">ACCOUNT &amp; BUDDY</p>
+                  <p className="settings-group-title">Account and buddy</p>
                   <p className="account-email-note">{accountEmail}</p>
                   <label
                     className="onboarding-label"

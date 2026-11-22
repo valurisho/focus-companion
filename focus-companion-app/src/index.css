@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
 :root {
-  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-family: "bree", Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   color: #292b28;
   background: transparent;
   font-synthesis: none;
@@ -130,7 +130,7 @@ button:focus-visible {
 .timer-popup-celebration-title {
   margin: 3px 0 1px;
   color: #8c6a32;
-  font-family: "bd-caramel-variable", Inter, ui-sans-serif, system-ui, sans-serif;
+  font-family: "bd-caramel-variable", "bree", ui-sans-serif, system-ui, sans-serif;
   font-size: 18px;
   font-weight: 400;
   letter-spacing: -.025em;
@@ -256,7 +256,7 @@ button:focus-visible {
 
 .top-bar h1 {
   margin: 0;
-  font-family: "bd-caramel-variable", Inter, ui-sans-serif, system-ui, sans-serif;
+  font-family: "bd-caramel-variable", "bree", ui-sans-serif, system-ui, sans-serif;
   font-size: 17px;
   font-weight: 400;
   letter-spacing: 0;
@@ -324,16 +324,17 @@ button:focus-visible {
 .timer {
   margin-top: 2px;
   color: #262824;
+  font-family: "bd-caramel-variable", "bree", ui-sans-serif, system-ui, sans-serif;
   font-size: clamp(76px, 12vw, 102px);
   font-variant-numeric: tabular-nums;
-  font-weight: 780;
-  letter-spacing: -.085em;
+  font-weight: 400;
+  letter-spacing: .030em;
   line-height: 1.12;
 }
 
 .timer.timer-duration {
   font-size: clamp(42px, 10vw, 60px);
-  letter-spacing: -.055em;
+  letter-spacing: .030em;
 }
 
 .session-detail {
@@ -389,6 +390,40 @@ button:focus-visible {
 .scene-lamp {
   fill: #f5e6ce;
   stroke: #ba9c72;
+  cursor: pointer;
+  transform-box: fill-box;
+  transform-origin: center bottom;
+  transition: transform .2s ease, filter .2s ease, fill .25s ease, stroke .25s ease;
+}
+
+.scene-lamp:hover {
+  transform: rotate(-4deg) translateY(-2px);
+  filter: drop-shadow(0 0 8px rgb(247 208 133 / 65%));
+}
+
+.scene-lamp:focus-visible {
+  outline: none;
+  filter: drop-shadow(0 0 7px rgb(224 172 89 / 85%));
+}
+
+.scene-lamp:focus {
+  outline: none;
+}
+
+.scene-lamp.is-on {
+  fill: #ffe5a5;
+  stroke: #d6a84f;
+  filter: drop-shadow(0 0 12px rgb(247 208 133 / 65%));
+}
+
+.scene-lamp.is-on:hover {
+  transform: rotate(4deg) translateY(-2px);
+  filter: drop-shadow(0 0 15px rgb(247 208 133 / 82%));
+}
+
+.scene-night-sky {
+  fill: #f4df9d;
+  stroke: none;
 }
 
 .scene-shadow {
@@ -447,7 +482,7 @@ button:focus-visible {
 
 .buddy-caption h2 {
   margin: 0;
-  font-family: "bd-caramel-variable", Inter, ui-sans-serif, system-ui, sans-serif;
+  font-family: "bd-caramel-variable", "bree", ui-sans-serif, system-ui, sans-serif;
   font-size: 17px;
   font-weight: 400;
   letter-spacing: 0;
@@ -1120,7 +1155,7 @@ button:focus-visible {
 .onboarding-card h1 {
   margin: 8px 0 5px;
   color: var(--ink);
-  font-family: "bd-caramel-variable", Inter, ui-sans-serif, system-ui, sans-serif;
+  font-family: "bd-caramel-variable", "bree", ui-sans-serif, system-ui, sans-serif;
   font-size: 23px;
   font-weight: 400;
   letter-spacing: 0;
@@ -1661,7 +1696,7 @@ body.desktop-pet-window {
 
 .result-title {
   margin: 7px 0 0;
-  font-family: "bd-caramel-variable", Inter, ui-sans-serif, system-ui, sans-serif;
+  font-family: "bd-caramel-variable", "bree", ui-sans-serif, system-ui, sans-serif;
   font-size: 21px;
   font-weight: 400;
   letter-spacing: 0;
@@ -1697,6 +1732,122 @@ body.desktop-pet-window {
   .result-title { margin-top: 4px; font-size: 18px; }
   .result-copy { margin-bottom: 5px; }
   .result-actions { gap: 5px; margin-top: 6px; }
+}
+
+/* The study lamp changes the room and the page into a softer night palette. */
+.study-window {
+  transition: background .28s ease, color .28s ease;
+}
+
+.study-window.night-mode {
+  --ink: #e7e3d8;
+  --muted: #aaa99f;
+  --line: #424947;
+  --paper: #252c2c;
+  background: #252c2c;
+  color: var(--ink);
+}
+
+.night-mode .top-bar,
+.night-mode .bottom-bar {
+  border-color: var(--line);
+  background: #252c2c;
+}
+
+.night-mode .buddy-status,
+.night-mode .timer,
+.night-mode .buddy-caption h2,
+.night-mode .session-status,
+.night-mode .result-title,
+.night-mode .settings-row-value,
+.night-mode .wheel-unit {
+  color: var(--ink);
+}
+
+.night-mode .timer { color: #f1ecdf; }
+.night-mode .session-detail,
+.night-mode .buddy-caption p,
+.night-mode .max-focus-description,
+.night-mode .max-focus-consent-card p,
+.night-mode .duration-summary,
+.night-mode .settings-running-note { color: var(--muted); }
+
+.night-mode .start-button,
+.night-mode .confirm-button {
+  background: #d8c89e;
+  color: #252c2c;
+}
+
+.night-mode .start-button:hover,
+.night-mode .confirm-button:hover:not(:disabled) { background: #e5d7b5; }
+
+.night-mode .secondary-button,
+.night-mode .extend-button,
+.night-mode .settings-input {
+  border-color: #59625f;
+  background: #303938;
+  color: var(--ink);
+}
+
+.night-mode .secondary-button:hover,
+.night-mode .extend-button:hover { background: #3a4442; }
+
+.night-mode .scene-frame { background: #293334; }
+.night-mode .scene-background { fill: #293334; }
+.night-mode .scene-window { fill: #354a59; stroke: #84909a; }
+.night-mode .scene-window > path { stroke: #84909a; }
+.night-mode .scene-lamp { fill: #ffe5a5; stroke: #d6a84f; }
+.night-mode .scene-shadow { fill: #202727; stroke: #343c3b; }
+.night-mode .scene-floor { stroke: #59615c; }
+.night-mode .scene-sofa { fill: #46584f; stroke: #879383; }
+.night-mode .scene-buddy { fill: #e8e1cc; stroke: #252c2c; }
+.night-mode .scene-buddy ellipse { fill: #252c2c; }
+.night-mode .scene-buddy .owl-eye-ring { fill: #e8e1cc; }
+
+.night-mode .session-status {
+  border-color: #526352;
+  background: #303b33;
+  color: #c3d2c1;
+}
+
+.night-mode .session-status.complete {
+  border-color: #655a42;
+  background: #39352a;
+  color: #ead39c;
+}
+
+.night-mode .session-status.paused,
+.night-mode .session-status.break {
+  border-color: #55584b;
+  background: #35372f;
+  color: #d0c49f;
+}
+
+.night-mode .timer-progress { border-color: #59625f; background: #303938; }
+.night-mode .timer-progress span { background: repeating-linear-gradient(135deg, #d8c89e 0 3px, #39413e 3px 6px); }
+.night-mode .text-button { color: #c3d2c1; }
+
+.night-mode .modal-card {
+  border-color: #5b625c;
+  background: #252c2c;
+  color: var(--ink);
+}
+
+.night-mode .modal-close,
+.night-mode .time-wheel { border-color: #59625f; background: #303938; color: var(--ink); }
+.night-mode .time-wheel-selected { background: #424b47; }
+.night-mode .wheel-option { color: #9dA59f; }
+.night-mode .wheel-option.selected { color: #f1ecdf; }
+.night-mode .settings-row { border-color: #424947; }
+.night-mode .settings-note { background: #303938; }
+.night-mode .settings-note p,
+.night-mode .settings-pencil { color: #c3c6bc; }
+
+@media (prefers-reduced-motion: reduce) {
+  .scene-lamp,
+  .study-window { transition: none; }
+  .scene-lamp:hover,
+  .scene-lamp.is-on:hover { transform: none; }
 }
 
 /* Session-complete reward notification */

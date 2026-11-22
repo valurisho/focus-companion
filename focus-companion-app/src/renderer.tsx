@@ -296,12 +296,12 @@ function DesktopPet() {
   )
 }
 
-function BuddyScene({ look, accessory, showBook = false }: { look: BuddyLook; accessory?: ClosetAccessory; showBook?: boolean }) {
+function BuddyScene({ look, accessory, showBook = false, nightMode, onToggleNightMode }: { look: BuddyLook; accessory?: ClosetAccessory; showBook?: boolean; nightMode: boolean; onToggleNightMode: () => void }) {
   return (
     <svg
       className="buddy-scene"
       viewBox="0 0 640 300"
-      role="img"
+      role="group"
       aria-labelledby="buddy-scene-title"
       preserveAspectRatio="xMidYMid meet"
     >
@@ -309,9 +309,27 @@ function BuddyScene({ look, accessory, showBook = false }: { look: BuddyLook; ac
       <rect x="1" y="1" width="638" height="298" rx="24" className="scene-background" />
       <g className="scene-window">
         <rect x="42" y="34" width="112" height="94" rx="4" />
+        {nightMode && <g className="scene-night-sky" aria-hidden="true">
+          <path d="M78 54a17 17 0 1 0 20 22A19 19 0 0 1 78 54z" />
+          <circle cx="124" cy="54" r="2" /><circle cx="112" cy="95" r="1.7" />
+          <path d="m132 77 1.5 3 3 1.5-3 1.5-1.5 3-1.5-3-3-1.5 3-1.5z" />
+        </g>}
         <path d="M98 35v92M43 81h110" />
       </g>
-      <g className="scene-lamp">
+      <g
+        className={`scene-lamp ${nightMode ? 'is-on' : ''}`}
+        role="button"
+        tabIndex={0}
+        aria-label={nightMode ? 'Turn on daytime mode' : 'Turn on night mode'}
+        aria-pressed={nightMode}
+        onClick={onToggleNightMode}
+        onKeyDown={(event) => {
+          if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault()
+            onToggleNightMode()
+          }
+        }}
+      >
         <path d="M548 76h48l14 47h-76zM572 123v126" />
         <path d="M552 250h40" />
       </g>
@@ -380,6 +398,7 @@ function App() {
   const isBreak = timer.mode === 'break'
   const isTimedSession = isRunning || isPaused || isComplete
   const hasValidDuration = sessionMinutes >= 5
+  const [nightMode, setNightMode] = useState(() => window.localStorage.getItem('tomo.night-mode') === 'true')
   const [profile, setProfile] = useState<UserProfile | null>(null)
   const [maxFocusEnabled, setMaxFocusEnabled] = useState(() => (
     window.localStorage.getItem('tomo.max-focus-consent-v2') === 'accepted'
@@ -545,6 +564,14 @@ function App() {
     } else {
       setMaxFocusConsentOpen(true)
     }
+  }
+
+  const toggleNightMode = () => {
+    setNightMode((current) => {
+      const next = !current
+      window.localStorage.setItem('tomo.night-mode', String(next))
+      return next
+    })
   }
 
   useEffect(() => {
@@ -834,7 +861,7 @@ function App() {
 
   return (
     <main className="app-shell">
-      <section className="study-window" aria-label="Tomo's Nook study screen">
+      <section className={`study-window ${nightMode ? 'night-mode' : ''}`} aria-label="Tomo's Nook study screen">
         <header className="top-bar">
           <div className="brand-lockup">
             <span className="brand-mark" aria-hidden="true">✦</span>
@@ -909,7 +936,7 @@ function App() {
                 </div>
               )}
               <div className="scene-frame result-scene">
-                <BuddyScene look={buddyLook} accessory={equippedAccessory} />
+                <BuddyScene look={buddyLook} accessory={equippedAccessory} nightMode={nightMode} onToggleNightMode={toggleNightMode} />
               </div>
               <div className="result-actions">
                 {isBreak ? (
@@ -957,7 +984,7 @@ function App() {
                 {isBreak ? `${sessionMinutes}-minute break` : 'Stay with your focus session'}
               </p>
               <div className="scene-frame session-scene">
-                <BuddyScene look={buddyLook} accessory={equippedAccessory} showBook={isRunning && !isBreak} />
+                <BuddyScene look={buddyLook} accessory={equippedAccessory} showBook={isRunning && !isBreak} nightMode={nightMode} onToggleNightMode={toggleNightMode} />
               </div>
               <div className="buddy-caption session-caption">
                 <p>
@@ -992,7 +1019,7 @@ function App() {
                 Choose a session length to get started
               </p>
               <div className="scene-frame">
-                <BuddyScene look={buddyLook} accessory={equippedAccessory} />
+                <BuddyScene look={buddyLook} accessory={equippedAccessory} nightMode={nightMode} onToggleNightMode={toggleNightMode} />
               </div>
               <div className="buddy-caption">
                 <h2>{buddyName || 'Tomo'}</h2>
@@ -1021,7 +1048,7 @@ function App() {
                 </button>
               </p>
               <div className="scene-frame">
-                <BuddyScene look={buddyLook} accessory={equippedAccessory} />
+                <BuddyScene look={buddyLook} accessory={equippedAccessory} nightMode={nightMode} onToggleNightMode={toggleNightMode} />
               </div>
               <div className="buddy-caption">
                 <h2>{buddyName || 'Tomo'}</h2>

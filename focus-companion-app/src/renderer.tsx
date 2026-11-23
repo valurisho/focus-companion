@@ -568,7 +568,7 @@ function App() {
   const isBreak = timer.mode === 'break'
   const isTimedSession = isRunning || isPaused || isComplete
   const hasValidDuration = sessionMinutes >= 5
-  const [nightMode, setNightMode] = useState(() => window.localStorage.getItem('tomo.night-mode') === 'true')
+  const [nightMode, setNightMode] = useState(false)
   const [profile, setProfile] = useState<UserProfile | null>(null)
   const [maxFocusEnabled, setMaxFocusEnabled] = useState(() => (
     window.localStorage.getItem('tomo.max-focus-consent-v2') === 'accepted'
@@ -625,6 +625,9 @@ function App() {
     lastTimerStatus.current = 'ready'
     setDesktopPetEnabled(
       window.localStorage.getItem(`tomo.desktop-pet.enabled.${nextProfile.id}`) === 'true'
+    )
+    setNightMode(
+      window.localStorage.getItem(`tomo.night-mode.${nextProfile.id}`) === 'true'
     )
     void window.focusCompanion.getTimerState().then((current) => {
       if (current.status === 'ready' && current.durationMinutes !== nextProfile.session_minutes) {
@@ -751,7 +754,9 @@ function App() {
   const toggleNightMode = () => {
     setNightMode((current) => {
       const next = !current
-      window.localStorage.setItem('tomo.night-mode', String(next))
+      if (profile) {
+        window.localStorage.setItem(`tomo.night-mode.${profile.id}`, String(next))
+      }
       return next
     })
   }
@@ -777,6 +782,7 @@ function App() {
         window.localStorage.removeItem('tomo.max-focus-consent-v2')
         setMaxFocusEnabled(false)
         setDesktopPetEnabled(false)
+        setNightMode(false)
       }
     })
     return () => subscription.unsubscribe()
@@ -996,6 +1002,7 @@ function App() {
     window.localStorage.removeItem('tomo.max-focus-consent-v2')
     setMaxFocusEnabled(false)
     setDesktopPetEnabled(false)
+    setNightMode(false)
   }
 
   const ownedAccessoryIds = new Set(ownedAccessories.map((owned) => owned.accessory_id))
@@ -1128,8 +1135,8 @@ function App() {
                     <button className="start-button" onClick={() => { void window.focusCompanion.startBreakTimer() }}>
                       Take a Break (5 min)
                     </button>
-                    <button className="extend-button" onClick={() => { void window.focusCompanion.startFocusTimer(20) }}>
-                      Extend 20 Minutes
+                    <button className="extend-button" onClick={() => { void window.focusCompanion.startFocusTimer(profile.session_minutes) }}>
+                      Extend {formatDuration(profile.session_minutes)}
                     </button>
                     <button className="extend-button" onClick={() => { void window.focusCompanion.startFocusTimer(profile.session_minutes) }}>
                       Skip break
@@ -1231,22 +1238,24 @@ function App() {
           )}
         </section>
 
-        {!isTimedSession && (
+        {!isRunning && (
           <footer className="bottom-bar">
-          <div className="max-focus">
-            <button
-              className={`switch ${maxFocusEnabled ? 'is-on' : ''}`}
-              type="button"
-              role="switch"
-              aria-checked={maxFocusEnabled}
-              aria-label={`Max Focus ${maxFocusEnabled ? 'on' : 'off'}`}
-              onClick={toggleMaxFocus}
-            >
-                <span />
-              </button>
-              <span className="max-focus-label">Max Focus</span>
-            <span className="max-focus-description">{maxFocusEnabled ? `On · ${thresholdLabel} idle` : 'Off'}</span>
-            </div>
+            {!isTimedSession && (
+              <div className="max-focus">
+                <button
+                  className={`switch ${maxFocusEnabled ? 'is-on' : ''}`}
+                  type="button"
+                  role="switch"
+                  aria-checked={maxFocusEnabled}
+                  aria-label={`Max Focus ${maxFocusEnabled ? 'on' : 'off'}`}
+                  onClick={toggleMaxFocus}
+                >
+                  <span />
+                </button>
+                <span className="max-focus-label">Max Focus</span>
+                <span className="max-focus-description">{maxFocusEnabled ? `On · ${thresholdLabel} idle` : 'Off'}</span>
+              </div>
+            )}
             <div className="footer-actions">
               <button className="secondary-button" onClick={() => { setIsEditingName(false); setModal('settings') }}>Settings</button>
               <button className="secondary-button" onClick={() => { setClosetPage('grid'); setModal('closet') }}>Closet</button>

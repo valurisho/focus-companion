@@ -720,6 +720,8 @@ button:focus-visible {
 }
 
 .bottom-bar {
+  position: relative;
+  z-index: 1;
   display: flex;
   min-height: 82px;
   align-items: center;
@@ -858,6 +860,7 @@ button:focus-visible {
 
 .footer-actions {
   gap: 9px;
+  margin-left: auto;
 }
 
 .secondary-button {

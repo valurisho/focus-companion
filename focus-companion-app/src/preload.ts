@@ -23,11 +23,6 @@ contextBridge.exposeInMainWorld('focusCompanion', {
     ipcRenderer.on('max-focus:idle-nudge', listener);
     return () => ipcRenderer.removeListener('max-focus:idle-nudge', listener);
   },
-  onMaxFocusActivity: (callback: () => void) => {
-    const listener = () => callback();
-    ipcRenderer.on('max-focus:activity-resumed', listener);
-    return () => ipcRenderer.removeListener('max-focus:activity-resumed', listener);
-  },
   quitApp: () => ipcRenderer.invoke('app:quit'),
   hidePopup: () => ipcRenderer.invoke('popup:hide'),
   showMainWindow: () => ipcRenderer.invoke('app:show-main'),

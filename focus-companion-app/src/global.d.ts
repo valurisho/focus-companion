@@ -32,7 +32,6 @@ interface Window {
     resetTimer: () => Promise<TimerSnapshot>
     onTimerUpdate: (callback: (snapshot: TimerSnapshot) => void) => () => void
     onMaxFocusNudge: (callback: () => void) => () => void
-    onMaxFocusActivity: (callback: () => void) => () => void
     quitApp: () => Promise<void>
     hidePopup: () => Promise<void>
     showMainWindow: () => Promise<void>

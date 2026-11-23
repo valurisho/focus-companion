@@ -372,6 +372,12 @@ function registerTimerIpc() {
     setDesktopPetVisible(visible);
   });
 
+  ipcMain.handle('pet:set-position', (event, x: unknown, y: unknown) => {
+    if (!desktopPetWindow || desktopPetWindow.isDestroyed() || desktopPetWindow.webContents !== event.sender) return;
+    if (typeof x !== 'number' || typeof y !== 'number') return;
+    desktopPetWindow.setPosition(Math.round(x), Math.round(y));
+  });
+
   ipcMain.handle('pet:close', (event) => {
     if (!desktopPetWindow || desktopPetWindow.isDestroyed() || desktopPetWindow.webContents !== event.sender) {
       throw new Error('Only the desktop pet can close its own window.');

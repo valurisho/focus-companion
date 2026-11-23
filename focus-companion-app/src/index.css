@@ -1444,8 +1444,12 @@ body.desktop-pet-window {
   height: 100vh;
   align-items: center;
   justify-content: center;
-  -webkit-app-region: drag;
+  cursor: grab;
   user-select: none;
+}
+
+.desktop-pet-screen:active {
+  cursor: grabbing;
 }
 
 .desktop-pet-hide {
@@ -1466,28 +1470,21 @@ body.desktop-pet-window {
   line-height: 1;
   cursor: pointer;
   opacity: 0;
-  pointer-events: none;
   transition: opacity 0.15s ease;
-  -webkit-app-region: no-drag;
 }
 
-.desktop-pet-screen:hover .desktop-pet-hide,
+.desktop-pet-hide.visible,
 .desktop-pet-screen:focus-within .desktop-pet-hide {
   opacity: 1;
-  pointer-events: auto;
-}
-
-.desktop-pet-avatar-drag {
-  position: relative;
-  display: flex;
-  align-items: center;
-  padding: 0;
-  border: 0;
-  background: transparent;
-  -webkit-app-region: drag;
 }
 
 .desktop-pet-avatar {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.desktop-pet-avatar-img {
   width: 110px;
   height: 110px;
 }

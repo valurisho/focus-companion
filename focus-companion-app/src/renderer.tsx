@@ -257,6 +257,7 @@ function DesktopPet() {
     look: 'blob',
     accessory: null,
   })
+  const [hovered, setHovered] = useState(false)
 
   useEffect(() => {
     document.documentElement.classList.add('desktop-pet-window')
@@ -274,18 +275,44 @@ function DesktopPet() {
     }
   }, [])
 
+  const handleDragStart = (e: React.MouseEvent) => {
+    if ((e.target as HTMLElement).closest('.desktop-pet-hide')) return
+    const startScreenX = e.screenX
+    const startScreenY = e.screenY
+    const winStartX = window.screenX
+    const winStartY = window.screenY
+    const handleMouseMove = (ev: MouseEvent) => {
+      void window.focusCompanion.setPetPosition(
+        winStartX + ev.screenX - startScreenX,
+        winStartY + ev.screenY - startScreenY,
+      )
+    }
+    const handleMouseUp = () => {
+      document.removeEventListener('mousemove', handleMouseMove)
+      document.removeEventListener('mouseup', handleMouseUp)
+    }
+    document.addEventListener('mousemove', handleMouseMove)
+    document.addEventListener('mouseup', handleMouseUp)
+  }
+
   return (
-    <main className="desktop-pet-screen" aria-label={`${appearance.buddyName}'s desktop companion`}>
+    <main
+      className="desktop-pet-screen"
+      aria-label={`${appearance.buddyName}'s desktop companion`}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      onMouseDown={handleDragStart}
+    >
       <button
-        className="desktop-pet-hide"
+        className={`desktop-pet-hide${hovered ? ' visible' : ''}`}
         aria-label="Hide desktop buddy"
         title="Hide buddy"
         onClick={() => { void window.focusCompanion.closeDesktopPet() }}
       >
         ×
       </button>
-      <div className="desktop-pet-avatar-drag" role="img" aria-label={appearance.buddyName}>
-        <BuddyAvatar look={appearance.look} className="desktop-pet-avatar" />
+      <div className="desktop-pet-avatar" role="img" aria-label={appearance.buddyName}>
+        <BuddyAvatar look={appearance.look} className="desktop-pet-avatar-img" />
         {appearance.accessory && (
           <span className="desktop-pet-accessory-icon" aria-hidden="true">
             {appearance.accessory.icon}

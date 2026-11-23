@@ -37,6 +37,7 @@ contextBridge.exposeInMainWorld('focusCompanion', {
     return () => ipcRenderer.removeListener('celebration:start', listener);
   },
   setDesktopPetVisible: (visible: boolean) => ipcRenderer.invoke('pet:set-visible', visible),
+  setPetPosition: (x: number, y: number) => ipcRenderer.invoke('pet:set-position', x, y),
   closeDesktopPet: () => ipcRenderer.invoke('pet:close'),
   setDesktopPetAppearance: (appearance: DesktopPetAppearance) => ipcRenderer.invoke('pet:set-appearance', appearance),
   getDesktopPetAppearance: () => ipcRenderer.invoke('pet:get-appearance'),

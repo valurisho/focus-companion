@@ -37,6 +37,7 @@ interface Window {
     hidePopup: () => Promise<void>
     showMainWindow: () => Promise<void>
     onCelebration: (callback: () => void) => () => void
+    setPetPosition: (x: number, y: number) => Promise<void>
     setDesktopPetVisible: (visible: boolean) => Promise<void>
     closeDesktopPet: () => Promise<void>
     setDesktopPetAppearance: (appearance: DesktopPetAppearance) => Promise<void>

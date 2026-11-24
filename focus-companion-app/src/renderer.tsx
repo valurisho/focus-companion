@@ -8,6 +8,20 @@ import topHatArtwork from '../assets/accessories/top-hat.svg'
 import starlightWizardHatArtwork from '../assets/accessories/starlight-wizard-hat.svg'
 import cloudHatArtwork from '../assets/accessories/cloud-hat.svg'
 
+// Max Focus consent and on/off are saved per account. Older builds saved them once for the
+// whole Mac; carry that over the first time an account signs in on this build.
+function readMaxFocusEnabled(profileId: string): boolean {
+  const consentKey = `tomo.max-focus-consent-v2.${profileId}`
+  const enabledKey = `tomo.max-focus.enabled.${profileId}`
+  if (window.localStorage.getItem(enabledKey) === null && window.localStorage.getItem('tomo.max-focus-consent-v2') === 'accepted') {
+    window.localStorage.setItem(consentKey, 'accepted')
+    window.localStorage.setItem(enabledKey, window.localStorage.getItem('tomo.max-focus.enabled') ?? 'false')
+  }
+  window.localStorage.removeItem('tomo.max-focus-consent-v2')
+  window.localStorage.removeItem('tomo.max-focus.enabled')
+  return window.localStorage.getItem(consentKey) === 'accepted' && window.localStorage.getItem(enabledKey) === 'true'
+}
+
 function tourSteps(buddyName: string): TourStep[] {
   return [
     { target: 'start', title: 'Start a focus session', body: `Press Start when you are ready to study. ${buddyName} will read along with you until the timer ends.` },
@@ -582,10 +596,8 @@ function App() {
   const hasValidDuration = sessionMinutes >= 5
   const [nightMode, setNightMode] = useState(false)
   const [profile, setProfile] = useState<UserProfile | null>(null)
-  const [maxFocusEnabled, setMaxFocusEnabled] = useState(() => (
-    window.localStorage.getItem('tomo.max-focus-consent-v2') === 'accepted'
-    && window.localStorage.getItem('tomo.max-focus.enabled') === 'true'
-  ))
+  // Max Focus is remembered per account, so it comes back on when that account signs in again
+  const [maxFocusEnabled, setMaxFocusEnabled] = useState(false)
   const [maxFocusThreshold, setMaxFocusThreshold] = useState<180 | 300 | 600>(() => {
     const stored = window.localStorage.getItem('tomo.max-focus.threshold')
     return stored === '300' ? 300 : stored === '600' ? 600 : 180
@@ -644,6 +656,7 @@ function App() {
     setNightMode(
       window.localStorage.getItem(`tomo.night-mode.${nextProfile.id}`) === 'true'
     )
+    setMaxFocusEnabled(readMaxFocusEnabled(nextProfile.id))
     void window.focusCompanion.getTimerState().then((current) => {
       if (current.status === 'ready' && current.durationMinutes !== nextProfile.session_minutes) {
         return window.focusCompanion.setTimerDuration(nextProfile.session_minutes)
@@ -692,9 +705,12 @@ function App() {
   }, [maxFocusSoundEnabled])
 
   useEffect(() => {
-    window.localStorage.setItem('tomo.max-focus.enabled', String(maxFocusEnabled))
-    void window.focusCompanion.setMaxFocusEnabled(maxFocusEnabled)
-  }, [maxFocusEnabled])
+    // Signed out: stop watching for idleness, but keep the account's saved choice for next sign-in
+    if (profile) {
+      window.localStorage.setItem(`tomo.max-focus.enabled.${profile.id}`, String(maxFocusEnabled))
+    }
+    void window.focusCompanion.setMaxFocusEnabled(maxFocusEnabled && Boolean(profile))
+  }, [maxFocusEnabled, profile?.id])
 
   useEffect(() => {
     window.localStorage.setItem('tomo.max-focus.threshold', String(maxFocusThreshold))
@@ -741,7 +757,7 @@ function App() {
       maxFocusAudioContext.current = audioContext
       if (audioContext.state === 'suspended') void audioContext.resume().catch(() => undefined)
     }
-    window.localStorage.setItem('tomo.max-focus-consent-v2', 'accepted')
+    if (profile) window.localStorage.setItem(`tomo.max-focus-consent-v2.${profile.id}`, 'accepted')
     setMaxFocusEnabled(true)
     setMaxFocusConsentOpen(false)
   }
@@ -792,9 +808,8 @@ function App() {
         setClosetError('')
         sessionCapture.current = null
         lastTimerStatus.current = 'ready'
-        // Clear device-local settings that are not per-account in localStorage.
-        // Max Focus consent must be cleared so the next user sees the consent modal.
-        window.localStorage.removeItem('tomo.max-focus-consent-v2')
+        // Turn off per-account features while signed out; their saved choices stay in
+        // localStorage under the account id and come back when that account signs in.
         setMaxFocusEnabled(false)
         setDesktopPetEnabled(false)
         setNightMode(false)
@@ -1014,7 +1029,6 @@ function App() {
     setClosetError('')
     sessionCapture.current = null
     lastTimerStatus.current = 'ready'
-    window.localStorage.removeItem('tomo.max-focus-consent-v2')
     setMaxFocusEnabled(false)
     setDesktopPetEnabled(false)
     setNightMode(false)

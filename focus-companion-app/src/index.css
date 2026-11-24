@@ -1658,7 +1658,6 @@ body.desktop-pet-window {
 .settings-account { display: flex; flex-direction: column; gap: 3px; padding: 8px 12px; border-radius: 10px; background: rgb(255 255 255 / 9%); color: var(--cream); }
 .onboarding-shell:not(.welcome-shell) .settings-account .settings-row-value { color: var(--parcel); }
 .settings-account .settings-row-value { overflow-wrap: anywhere; }
-.settings-account-actions { display: flex; justify-content: flex-end; margin-top: 12px; font-size: 12px; }
 .profile-message { margin: 5px 0; color: var(--olive); font-size: 11px; line-height: 1.4; }
 @media (max-height: 620px) {
   .onboarding-content { padding-top: 13px; padding-bottom: 13px; }
@@ -2195,3 +2194,12 @@ body.desktop-pet-window {
 .app-shell.onboarding-shell .onboarding-select:focus { outline: 2px solid var(--chartreuse); outline-offset: 2px; }
 
 .app-shell.onboarding-shell .buddy-look-option { border-radius: 14px; }
+
+/* Profile dialog: opened from the Profile button in the footer */
+.profile-button { display: inline-flex; align-items: center; gap: 6px; }
+.profile-card { margin-top: 14px; }
+.profile-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 12px; }
+.profile-stat { display: flex; flex-direction: column; gap: 2px; padding: 12px 14px; border: 1.5px solid var(--line-strong); border-radius: var(--hand-radius); background: rgb(255 255 255 / 22%); }
+.profile-stat strong { font-size: 20px; font-weight: 800; }
+.profile-stat span { color: var(--muted); font-size: 11px; }
+.profile-actions { display: flex; justify-content: flex-end; margin-top: 14px; }

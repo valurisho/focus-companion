@@ -7,7 +7,7 @@ import topHatArtwork from '../assets/accessories/top-hat.svg'
 import starlightWizardHatArtwork from '../assets/accessories/starlight-wizard-hat.svg'
 import cloudHatArtwork from '../assets/accessories/cloud-hat.svg'
 
-type ModalName = 'duration' | 'settings' | 'closet' | null
+type ModalName = 'duration' | 'settings' | 'closet' | 'profile' | null
 type ClosetPage = 'grid' | 'try-on'
 
 interface ClosetAccessory {
@@ -1258,7 +1258,13 @@ function App() {
             )}
             <div className="footer-actions">
               <button className="secondary-button" onClick={() => { setIsEditingName(false); setModal('settings') }}>Settings</button>
-              <button className="secondary-button" onClick={() => { setClosetPage('grid'); setModal('closet') }}>Closet</button>
+              <button className="secondary-button profile-button" onClick={() => { setProfileMessage(''); setModal('profile') }}>
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+                  <circle cx="7" cy="4.6" r="2.6" stroke="currentColor" strokeWidth="1.5" />
+                  <path d="M2 12.6c.6-2.4 2.6-3.8 5-3.8s4.4 1.4 5 3.8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+                </svg>
+                Profile
+              </button>
             </div>
           </footer>
         )}
@@ -1267,7 +1273,7 @@ function App() {
       {modal && (
         <div className="modal-backdrop" onMouseDown={(event) => event.target === event.currentTarget && setModal(null)}>
           <section className={`modal-card ${modal === 'closet' ? 'closet-modal' : ''}`} role="dialog" aria-modal="true" aria-labelledby="modal-title">
-            {(modal === 'settings' || modal === 'closet') && (
+            {(modal === 'settings' || modal === 'closet' || modal === 'profile') && (
               <button className="modal-close" aria-label="Close dialog" onClick={() => setModal(null)}>×</button>
             )}
             {modal === 'duration' && (
@@ -1325,11 +1331,6 @@ function App() {
                   >
                     <span />
                   </button>
-                </div>
-                <div className="settings-account">
-                  <span className="settings-row-title">Signed in as</span>
-                  <span className="settings-row-value">{authEmail}</span>
-                  <span className="settings-row-value">Username: {profile.username}</span>
                 </div>
                 <div className="settings-row">
                   {isEditingName ? (
@@ -1427,8 +1428,39 @@ function App() {
                   </>
                 )}
                 {profileMessage && <p className="profile-message" role="status">{profileMessage}</p>}
-                <div className="settings-account-actions">
-                  <button className="text-button" onClick={() => { void signOut() }}>Sign out</button>
+              </>
+            )}
+            {modal === 'profile' && (
+              <>
+                <h2 id="modal-title">Profile</h2>
+                <div className="closet-buddy-card profile-card">
+                  <div className="closet-buddy-avatar">
+                    <BuddyAvatar look={buddyLook} className="closet-avatar" />
+                    {equippedAccessory && <span className="closet-worn-icon">{equippedAccessory.icon || '✦'}</span>}
+                  </div>
+                  <div className="closet-buddy-copy">
+                    <strong>{profile.username}</strong>
+                    <span title={authEmail}>{authEmail}</span>
+                    <span>Studying with {buddyName || 'Tomo'}</span>
+                  </div>
+                </div>
+                <div className="profile-stats">
+                  <div className="profile-stat">
+                    <strong>{completedSessionCount}</strong>
+                    <span>{completedSessionCount === 1 ? 'focus session' : 'focus sessions'}</span>
+                  </div>
+                  <div className="profile-stat">
+                    <strong>{earnedAccessories.length}{closetAccessories.length > 0 ? ` / ${closetAccessories.length}` : ''}</strong>
+                    <span>accessories earned</span>
+                  </div>
+                </div>
+                <div className="settings-row">
+                  <span className="settings-row-title">Closet</span>
+                  <button className="text-button" onClick={() => { setClosetPage('grid'); setModal('closet') }}>Open closet ›</button>
+                </div>
+                {profileMessage && <p className="profile-message" role="status">{profileMessage}</p>}
+                <div className="profile-actions">
+                  <button className="secondary-button" onClick={() => { void signOut() }}>Sign out</button>
                 </div>
               </>
             )}

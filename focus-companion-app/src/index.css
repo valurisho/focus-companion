@@ -1655,6 +1655,10 @@ body.desktop-pet-window {
 .settings-card .onboarding-input { min-height: 35px; }
 .settings-card .field-hint { margin: 3px 0 5px; }
 .settings-card .onboarding-actions { margin-top: 12px; }
+/* Step 3's timer wheel shows three rows (one above and below the pick) so the whole step fits without scrolling.
+   Rows stay 48px tall to match wheelRowHeight in onboarding.tsx. */
+.settings-card .time-wheel { height: 144px; }
+.settings-card .wheel-viewport { padding-block: 48px; scroll-padding-block: 48px; mask-image: linear-gradient(to bottom, transparent, #000 30%, #000 70%, transparent); }
 .settings-account { display: flex; flex-direction: column; gap: 3px; padding: 8px 12px; border-radius: 10px; background: rgb(255 255 255 / 9%); color: var(--cream); }
 .onboarding-shell:not(.welcome-shell) .settings-account .settings-row-value { color: var(--parcel); }
 .settings-account .settings-row-value { overflow-wrap: anywhere; }

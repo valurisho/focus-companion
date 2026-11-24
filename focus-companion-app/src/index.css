@@ -2203,3 +2203,48 @@ body.desktop-pet-window {
 .profile-stat strong { font-size: 20px; font-weight: 800; }
 .profile-stat span { color: var(--muted); font-size: 11px; }
 .profile-actions { display: flex; justify-content: flex-end; margin-top: 14px; }
+
+/* First-run tour: dotted ring + dotted arrow + a little note, one control at a time */
+.tour-layer { position: fixed; z-index: 20; inset: 0; color: var(--cream); }
+.tour-layer::before { position: absolute; content: ""; inset: 0; }
+.tour-ring {
+  position: absolute;
+  border: 2.5px dashed var(--chartreuse-soft);
+  border-radius: 16px;
+  box-shadow: 0 0 0 9999px rgb(41 16 12 / 52%);
+  pointer-events: none;
+  transition: top .3s ease, left .3s ease, width .3s ease, height .3s ease;
+}
+.tour-arrow { position: absolute; inset: 0; overflow: visible; pointer-events: none; color: var(--chartreuse-soft); }
+.tour-arrow-path {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.5;
+  stroke-dasharray: 2 7;
+  stroke-linecap: round;
+  animation: tour-arrow-in .45s ease both;
+}
+@keyframes tour-arrow-in { from { opacity: 0; } to { opacity: 1; } }
+.tour-note {
+  position: absolute;
+  padding: 14px 16px 12px;
+  border: 1.5px dashed var(--line-strong);
+  border-radius: var(--hand-radius);
+  background: var(--cream);
+  box-shadow: 0 10px 28px rgb(41 16 12 / 28%);
+  color: var(--ink);
+  animation: tour-note-in .3s ease both;
+}
+.tour-note-centered { top: 50%; left: 50%; transform: translate(-50%, -50%); animation: none; }
+@keyframes tour-note-in { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+.tour-step-count { margin: 0 0 2px; color: var(--muted); font-size: 10px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+.tour-note h3 { margin: 0 0 4px; font-size: 15px; font-weight: 800; }
+.tour-body { margin: 0; color: var(--fig-soft); font-size: 12.5px; line-height: 1.45; }
+.tour-actions { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 12px; }
+.tour-nav { display: flex; gap: 6px; }
+.tour-skip, .tour-back { padding: 4px 2px; border: 0; background: none; color: var(--muted); cursor: pointer; font-size: 12px; }
+.tour-skip:hover, .tour-back:hover { color: var(--ink); }
+.tour-next { min-height: 30px; padding: 0 14px; border: 0; border-radius: var(--hand-radius); background: var(--oxblood); color: var(--cream); cursor: pointer; font-size: 12.5px; font-weight: 750; }
+@media (prefers-reduced-motion: reduce) {
+  .tour-ring, .tour-arrow-path, .tour-note { transition: none; animation: none; }
+}

@@ -2,10 +2,20 @@ import { useCallback, useEffect, useRef, useState, type KeyboardEvent } from 're
 import { createRoot } from 'react-dom/client'
 import './index.css'
 import { supabase } from './utils/supabase'
+import { Tour, type TourStep } from './tour'
 import { BUDDY_NAME_MAX_LENGTH, BuddyAvatar, OnboardingFlow, type BuddyLook, type UserProfile } from './onboarding'
 import topHatArtwork from '../assets/accessories/top-hat.svg'
 import starlightWizardHatArtwork from '../assets/accessories/starlight-wizard-hat.svg'
 import cloudHatArtwork from '../assets/accessories/cloud-hat.svg'
+
+function tourSteps(buddyName: string): TourStep[] {
+  return [
+    { target: 'start', title: 'Start a focus session', body: `Press Start when you are ready to study. ${buddyName} will read along with you until the timer ends.` },
+    { target: 'duration', title: 'Change the session length', body: 'Tap Change to pick how long each focus session lasts. You can update it any time the timer is stopped.' },
+    { target: 'lamp', title: 'Flip the lamp', body: 'Click the lamp to switch the room between day and night. It is just for the cozy vibes.' },
+    { target: 'closet', title: 'Visit the closet', body: `Finishing sessions earns accessories. Click the wardrobe to try them on ${buddyName}.` },
+  ]
+}
 
 type ModalName = 'duration' | 'settings' | 'closet' | 'profile' | null
 type ClosetPage = 'grid' | 'try-on'
@@ -401,6 +411,7 @@ function BuddyScene({ look, buddyName, accessory, showBook = false, nightMode, c
       </g>
 
       <g
+        data-tour="lamp"
         className={`scene-lamp ${nightMode ? 'is-on' : ''}`}
         role="button"
         tabIndex={0}
@@ -428,6 +439,7 @@ function BuddyScene({ look, buddyName, accessory, showBook = false, nightMode, c
 
       {/* Wardrobe behind the couch: the left door swings open a little on hover and wide on click, then the closet opens */}
       <g
+        data-tour="closet"
         className={`scene-wardrobe ${wardrobeOpen ? 'is-open' : ''}`}
         role="button"
         tabIndex={0}
@@ -600,6 +612,7 @@ function App() {
   const [isEquippingAccessory, setIsEquippingAccessory] = useState(false)
   const [newlyEarnedAccessories, setNewlyEarnedAccessories] = useState<Array<{ id: string; name: string; icon: string }>>([])
   const [modal, setModal] = useState<ModalName>(null)
+  const [tourOpen, setTourOpen] = useState(false)
   const [buddyName, setBuddyName] = useState('Tomo')
   const [draftBuddyName, setDraftBuddyName] = useState('Tomo')
   const [isEditingName, setIsEditingName] = useState(false)
@@ -607,8 +620,10 @@ function App() {
   const durationReturnTo = useRef<ModalName>(null)
   const lastTimerStatus = useRef<TimerStatus>('ready')
   const sessionCapture = useRef<{ id: string; startedAt: string } | null>(null)
-  const finishOnboarding = useCallback((nextProfile: UserProfile, email: string) => {
+  const finishOnboarding = useCallback((nextProfile: UserProfile, email: string, isNewAccount = false) => {
     setProfile(nextProfile)
+    // Brand-new accounts get the walkthrough once; signing in again never shows it
+    setTourOpen(isNewAccount && window.localStorage.getItem(`tomo.tour-done.${nextProfile.id}`) !== 'true')
     setAuthEmail(email)
     setBuddyName(nextProfile.buddy_name)
     setDraftBuddyName(nextProfile.buddy_name)
@@ -1048,6 +1063,11 @@ function App() {
     return <OnboardingFlow onComplete={finishOnboarding} />
   }
 
+  const finishTour = () => {
+    window.localStorage.setItem(`tomo.tour-done.${profile.id}`, 'true')
+    setTourOpen(false)
+  }
+
   return (
     <main className="app-shell">
       <section className={`study-window room-wall ${nightMode ? 'night-mode' : ''}`} aria-label="Tomo's Nook study screen">
@@ -1221,12 +1241,12 @@ function App() {
               <p className="session-detail">
                 Session length
                 <span aria-hidden="true"> · </span>
-                <button className="text-button" onClick={() => openDurationPicker()}>
+                <button className="text-button" data-tour="duration" onClick={() => openDurationPicker()}>
                   Change
                 </button>
               </p>
               <div className="primary-actions">
-                <button className="start-button" onClick={primaryAction}>Start</button>
+                <button className="start-button" data-tour="start" onClick={primaryAction}>Start</button>
               </div>
               <div className="buddy-caption">
                 {!equippedAccessory && <p>Finish a focus session to earn your first accessory</p>}
@@ -1458,6 +1478,10 @@ function App() {
                   <span className="settings-row-title">Closet</span>
                   <button className="text-button" onClick={() => { setClosetPage('grid'); setModal('closet') }}>Open closet ›</button>
                 </div>
+                <div className="settings-row">
+                  <span className="settings-row-title">New here?</span>
+                  <button className="text-button" onClick={() => { setModal(null); setTourOpen(true) }}>Show me around ›</button>
+                </div>
                 {profileMessage && <p className="profile-message" role="status">{profileMessage}</p>}
                 <div className="profile-actions">
                   <button className="secondary-button" onClick={() => { void signOut() }}>Sign out</button>
@@ -1610,6 +1634,8 @@ function App() {
           </section>
         </div>
       )}
+
+      {tourOpen && !modal && <Tour steps={tourSteps(buddyName || 'Tomo')} onDone={finishTour} />}
 
       {maxFocusConsentOpen && (
         <div

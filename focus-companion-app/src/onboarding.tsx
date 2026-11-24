@@ -240,7 +240,7 @@ function StepMarker({ step }: { step: number }) {
 export function OnboardingFlow({
   onComplete,
 }: {
-  onComplete: (profile: UserProfile, email: string) => void;
+  onComplete: (profile: UserProfile, email: string, isNewAccount?: boolean) => void;
 }) {
   const [page, setPage] = useState<Page>("loading");
   const [authMode, setAuthMode] = useState<AuthMode>("sign-up");
@@ -429,7 +429,8 @@ export function OnboardingFlow({
         throw new Error("Your profile could not be saved. Please try again.");
       }
 
-      onComplete(savedProfile as UserProfile, accountEmail);
+      // Finishing profile setup means this account was just created
+      onComplete(savedProfile as UserProfile, accountEmail, true);
     } catch (error) {
       setErrorMessage(friendlyError(error));
     } finally {
